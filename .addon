@@ -1,0 +1,20 @@
+{
+  "Title": "SBox Destiny 2 Gear Shader",
+  "Type": "content",
+  "Org": "deltasb",
+  "Ident": "sbox_d2_shader",
+  "Tags": "Shader, Destiny2",
+  "Schema": 1,
+  "HasAssets": true,
+  "AssetsPath": "",
+  "ResourcePaths": null,
+  "HasCode": false,
+  "CodePath": null,
+  "RootNamespace": null,
+  "Metadata": {
+    "Summary": "Destiny 2 Gear Shader for S\u0026Box",
+    "Description": "Recreation of Destiny 2\u0027s gear shader system (WIP, not really useable atm if you dont know what you\u0027re doing)",
+    "ReplaceTags": "",
+    "Public": true
+  }
+}
