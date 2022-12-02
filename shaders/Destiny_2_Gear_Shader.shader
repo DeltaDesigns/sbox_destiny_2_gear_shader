@@ -22,12 +22,14 @@ MODES
     ToolsVis( S_MODE_TOOLS_VIS ); 									// Ability to see in the editor
     ToolsWireframe( "vr_tools_wireframe.vfx" ); 					// Allows for mat_wireframe to work
 	ToolsShadingComplexity( "vr_tools_shading_complexity.vfx" ); 	// Shows how expensive drawing is in debug view
+	Reflection( "high_quality_reflections.vfx" );
 }
 
 //=========================================================================================================================
 
 FEATURES
 {
+	Feature( F_HIGH_QUALITY_REFLECTIONS, 0..1, "Rendering" );
 
 	Feature(F_VERTEX_ANIMATION, 0..1, "Animation");
 	// Feature(F_VERTEXANIM_BLENDSHAPE, 0..1, "Animation");
@@ -50,6 +52,7 @@ FEATURES
 
 	FeatureRule(Allow1(F_DIFFUSE_MAP, F_METAL_MAP, F_NORMAL_MAP, F_IRIDESCENCE_MAP, F_IRIDESCENCE_MASK_MAP, F_EMISSION_MAP), "");
 
+
 }
 
 COMMON
@@ -57,6 +60,8 @@ COMMON
 	#include "common/shared.hlsl"
 	#define S_SPECULAR 1
     #define S_SPECULAR_CUBE_MAP 1
+	#define USES_HIGH_QUALITY_REFLECTIONS
+	#define D_NO_MODEL_TINT 1
 }
 
 //=========================================================================================================================
@@ -86,7 +91,8 @@ VS
 	#include "common/vertex.hlsl"
 
 	StaticCombo( S_VERTEX_ANIMATION, F_VERTEX_ANIMATION, Sys( PC ) );
-
+	BoolAttribute( UsesHighQualityReflections, ( F_HIGH_QUALITY_REFLECTIONS > 0 ) );
+	
 	#if(S_VERTEX_ANIMATION)
 		float fl_VertexAnim_Speed < Default( 1.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
 		FloatAttribute( fl_VertexAnim_Speed, fl_VertexAnim_Speed );
@@ -221,29 +227,29 @@ PS
 	//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	//Detail Texture Inputs
 
-	CreateInputTexture2D( TextureDetailDiffuse01, Srgb, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 0.501961, 1.0) );
-	CreateTexture2DWithoutSampler( g_DetailDiffuse01 ) < Channel( RGBA, Box( TextureDetailDiffuse01 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
-	TextureAttribute( g_DetailDiffuse01, g_DetailDiffuse01 );
+	CreateInputTexture2D( TextureDetailDiffuse01, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateTexture2DWithoutSampler( g_tDetailDiffuse01 ) < Channel( RGBA, Box( TextureDetailDiffuse01 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
+	TextureAttribute( g_tDetailDiffuse01, g_tDetailDiffuse01 );
 
-	CreateInputTexture2D( TextureDetailNormal01, Linear, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 1.000000, 0) );
-	CreateTexture2DWithoutSampler( g_DetailNormal01 ) < Channel( RGBA, Box( TextureDetailNormal01 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
-	TextureAttribute( g_DetailNormal01, g_DetailNormal01 );
+	CreateInputTexture2D( TextureDetailNormal01, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateTexture2DWithoutSampler( g_tDetailNormal01 ) < Channel( RGBA, Box( TextureDetailNormal01 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
+	TextureAttribute( g_tDetailNormal01, g_tDetailNormal01 );
 
-	CreateInputTexture2D( TextureDetailDiffuse02, Srgb, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 0.501961, 1.0) );
-	CreateTexture2DWithoutSampler( g_DetailDiffuse02 ) < Channel( RGBA, Box( TextureDetailDiffuse02 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
-	TextureAttribute( g_DetailDiffuse02, g_DetailDiffuse02 );
+	CreateInputTexture2D( TextureDetailDiffuse02, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateTexture2DWithoutSampler( g_tDetailDiffuse02 ) < Channel( RGBA, Box( TextureDetailDiffuse02 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
+	TextureAttribute( g_tDetailDiffuse02, g_tDetailDiffuse02 );
 
-	CreateInputTexture2D( TextureDetailNormal02, Linear, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 1.000000, 0) );
-	CreateTexture2DWithoutSampler( g_DetailNormal02 ) < Channel( RGBA, Box( TextureDetailNormal02 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
-	TextureAttribute( g_DetailNormal02, g_DetailNormal02 );
+	CreateInputTexture2D( TextureDetailNormal02, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateTexture2DWithoutSampler( g_tDetailNormal02 ) < Channel( RGBA, Box( TextureDetailNormal02 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
+	TextureAttribute( g_tDetailNormal02, g_tDetailNormal02 );
 
-	CreateInputTexture2D( TextureDetailDiffuse03, Srgb, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 0.501961, 1.0) );
-	CreateTexture2DWithoutSampler( g_DetailDiffuse03 ) < Channel( RGBA, Box( TextureDetailDiffuse03 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
-	TextureAttribute( g_DetailDiffuse03, g_DetailDiffuse03 );
+	CreateInputTexture2D( TextureDetailDiffuse03, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateTexture2DWithoutSampler( g_tDetailDiffuse03 ) < Channel( RGBA, Box( TextureDetailDiffuse03 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
+	TextureAttribute( g_tDetailDiffuse03, g_tDetailDiffuse03 );
 
-	CreateInputTexture2D( TextureDetailNormal03, Linear, 8, "", "", "Detail Textures,11/20", Default4( 0.501961, 0.501961, 1.000000, 0) );
-	CreateTexture2DWithoutSampler( g_DetailNormal03 ) < Channel( RGBA, Box( TextureDetailNormal03 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
-	TextureAttribute( g_DetailNormal03, g_DetailNormal03 );
+	CreateInputTexture2D( TextureDetailNormal03, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateTexture2DWithoutSampler( g_tDetailNormal03 ) < Channel( RGBA, Box( TextureDetailNormal03 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
+	TextureAttribute( g_tDetailNormal03, g_tDetailNormal03 );
 
 	//End of Detail Textures
 	//--------------------------------------------------------------------------------------------------------------------
@@ -891,8 +897,8 @@ PS
 		[branch] switch(round(clamp(i.vSlots.x,1,6)))
 		{
 			case(1): //Armor Primary
-				detailDiff = Tex2DS(g_DetailDiffuse01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailDiffuseTransform.xy + g_Armor_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailNormalTransform.xy + g_Armor_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailDiffuseTransform.xy + g_Armor_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailNormalTransform.xy + g_Armor_DetailNormalTransform.zw);
 				color = g_ArmorPrimary_Color;
 				wearRemap = g_ArmorPrimary_WearRemap;
 				roughnessRemap = g_ArmorPrimary_RoughnessRemap;
@@ -913,8 +919,8 @@ PS
 	
 				break;
 			case(2): //Armor Secondary
-				detailDiff = Tex2DS(g_DetailDiffuse01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailDiffuseTransform.xy + g_Armor_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailNormalTransform.xy + g_Armor_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailDiffuseTransform.xy + g_Armor_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal01, TextureFiltering, (vUVs*5.0) * g_Armor_DetailNormalTransform.xy + g_Armor_DetailNormalTransform.zw);
 				color = g_ArmorSecondary_Color;
 				wearRemap = g_ArmorSecondary_WearRemap;
 				roughnessRemap = g_ArmorSecondary_RoughnessRemap;
@@ -934,8 +940,8 @@ PS
 				wornMetal = g_WornArmorSecondary_Metalness;
 				break;
 			case(3): //cloth primary
-				detailDiff = Tex2DS(g_DetailDiffuse02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailDiffuseTransform.xy + g_Cloth_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailNormalTransform.xy + g_Cloth_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailDiffuseTransform.xy + g_Cloth_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailNormalTransform.xy + g_Cloth_DetailNormalTransform.zw);
 				color = g_ClothPrimary_Color;
 				wearRemap = g_ClothPrimary_WearRemap;
 				roughnessRemap = g_ClothPrimary_RoughnessRemap;
@@ -955,8 +961,8 @@ PS
 				wornMetal = g_WornClothPrimary_Metalness;
 				break;
 			case(4): //cloth secondary
-				detailDiff = Tex2DS(g_DetailDiffuse02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailDiffuseTransform.xy + g_Cloth_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailNormalTransform.xy + g_Cloth_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailDiffuseTransform.xy + g_Cloth_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal02, TextureFiltering, (vUVs*5.0) * g_Cloth_DetailNormalTransform.xy + g_Cloth_DetailNormalTransform.zw);
 				color = g_ClothSecondary_Color;
 				wearRemap = g_ClothSecondary_WearRemap;
 				roughnessRemap = g_ClothSecondary_RoughnessRemap;
@@ -976,8 +982,8 @@ PS
 				wornMetal = g_WornClothSecondary_Metalness;
 				break;
 			case(5): //suit primary
-				detailDiff = Tex2DS(g_DetailDiffuse03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailDiffuseTransform.xy + g_Suit_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailNormalTransform.xy + g_Suit_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailDiffuseTransform.xy + g_Suit_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailNormalTransform.xy + g_Suit_DetailNormalTransform.zw);
 				color = g_SuitPrimary_Color;
 				wearRemap = g_SuitPrimary_WearRemap;
 				roughnessRemap = g_SuitPrimary_RoughnessRemap;
@@ -997,8 +1003,8 @@ PS
 				wornMetal = g_WornSuitPrimary_Metalness;
 				break;
 			case(6): //suit secondary
-				detailDiff = Tex2DS(g_DetailDiffuse03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailDiffuseTransform.xy + g_Suit_DetailDiffuseTransform.zw);
-				detailNorm = Tex2DS(g_DetailNormal03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailNormalTransform.xy + g_Suit_DetailNormalTransform.zw);
+				detailDiff = Tex2DS(g_tDetailDiffuse03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailDiffuseTransform.xy + g_Suit_DetailDiffuseTransform.zw);
+				detailNorm = Tex2DS(g_tDetailNormal03, TextureFiltering, (vUVs*5.0) * g_Suit_DetailNormalTransform.xy + g_Suit_DetailNormalTransform.zw);
 				color = g_SuitSecondary_Color;
 				wearRemap = g_SuitSecondary_WearRemap;
 				roughnessRemap = g_SuitSecondary_RoughnessRemap;
