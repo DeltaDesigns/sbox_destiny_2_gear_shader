@@ -13,8 +13,8 @@
   "RootNamespace": null,
   "Metadata": {
     "Summary": "Destiny 2 Gear Shader for S\u0026Box",
-    "Description": "Recreation of Destiny 2\u0027s gear shader system (WIP, not really useable atm if you dont know what you\u0027re doing)",
-    "ReplaceTags": "",
+    "Description": "Recreation of Destiny 2\u0027s gear shader system (WIP, you should know what you\u0027re doing if you\u0027re gonna use this)",
+    "ReplaceTags": "shader",
     "Public": true
   }
 }
