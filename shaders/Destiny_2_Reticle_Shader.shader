@@ -20,11 +20,15 @@ FEATURES
 //=========================================================================================================================
 MODES
 {
-    VrForward();													// Indicates this shader will be used for main rendering
-    Depth( "vr_depth_only.vfx" ); 									// Shader that will be used for shadowing and depth prepass
-    ToolsVis( S_MODE_TOOLS_VIS ); 									// Ability to see in the editor
-    ToolsWireframe( "vr_tools_wireframe.vfx" ); 					// Allows for mat_wireframe to work
-	ToolsShadingComplexity( "vr_tools_shading_complexity.vfx" ); 	// Shows how expensive drawing is in debug view
+	VrForward();
+
+	Depth( "depth_only.shader" ); 
+
+	ToolsVis( S_MODE_TOOLS_VIS );
+	ToolsWireframe( "vr_tools_wireframe.shader" );
+	ToolsShadingComplexity( "tools_shading_complexity.shader" );
+
+	Reflection( "high_quality_reflections.shader" );
 }
 
 //=========================================================================================================================
@@ -33,10 +37,7 @@ COMMON
 	#include "common/shared.hlsl"
 
 	#define S_TRANSLUCENT 1
-
-	//SamplerState TextureFiltering < Filter( ANISOTROPIC ); MaxAniso( 8 ); >;
 }
-
 
 //=========================================================================================================================
 
@@ -82,14 +83,12 @@ PS
 
 	#include "common/pixel.material.helpers.hlsl"
 	
-	RenderState(CullMode, F_RENDER_BACKFACES? NONE : DEFAULT );
-	//StaticCombo( S_ALPHA_TEST, F_ALPHA_TEST, Sys( ALL ) );
 	//
 	// Main
 	//
 	
 	//Creates texture inputs
-	CreateInputTexture2D( TextureDiffuse,          Srgb,   8, "",                 "_diffuse",  "Material,10/10", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureDiffuse, Srgb,   8, "", "_diffuse",  "Material,10/10", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tDiffuse ) < Channel( RGBA, Box( TextureDiffuse ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tDiffuse, g_tDiffuse );
 
@@ -97,7 +96,7 @@ PS
 	CreateTexture2DWithoutSampler( g_tGStack ) < Channel( RGBA, Box( TextureGStack ), Linear ); OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tGStack, g_tGStack );
 	
-	CreateInputTexture2D( TextureNormal,           Linear, 8, "NormalizeNormals", "_normal", "Material,10/30", Default3( 0.5, 0.5, 1.0 ) );
+	CreateInputTexture2D( TextureNormal, Linear, 8, "NormalizeNormals", "_normal", "Material,10/30", Default3( 0.5, 0.5, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tNormal ) < Channel( RGBA, Box( TextureNormal ), Linear ); OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tNormal, g_tNormal );
 
@@ -134,10 +133,18 @@ PS
 		float4 colorFinal = float4( color1 + color2 + color3, 1 );
 
 		//Main material properties
-		Material m = ToMaterial(i, colorFinal, Tex2DS( g_tNormal, TextureFiltering, vUV ), float4( 0.0f, 0.0f, 0.0f, 0.0f ) );
+		Material m = ToMaterial(i, float4(0,0,0,1), Tex2DS( g_tNormal, TextureFiltering, vUV ), float4( 0.0f, 0.0f, 1.0f, 0.0f ) );
 		m.Opacity = gstack.g;
 		m.Emission = colorFinal * g_flEmitScale;
-		//////////////////
+	
+		if(g_flSpecularScale > 0)
+		{
+			m.Opacity = saturate(m.Opacity + g_flSpecularScale);
+			m.Albedo = g_flSpecularScale;
+			m.Metalness = 1;
+			m.Roughness = 0.04;
+		}
+
 		ShadingModelValveStandard sm;
 		
 		return FinalizePixelMaterial( i, m, sm );
