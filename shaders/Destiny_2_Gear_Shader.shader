@@ -42,15 +42,15 @@ FEATURES
 	Feature(F_DECAL, 0..1, "Blending");
 	Feature(F_DYE_MAP, 0..1, "Dye Map");
 
-	Feature(F_DIFFUSE_MAP, 0..1, "Debugs");
-	Feature(F_NORMAL_MAP, 0..1, "Debugs");
-	Feature(F_METAL_MAP, 0..1, "Debugs");
-	//Feature(F_ROUGH_MAP, 0..1, "Debugs");
-	Feature(F_IRIDESCENCE_MAP, 0..1, "Debugs");
-	Feature(F_IRIDESCENCE_MASK_MAP, 0..1, "Debugs");
-	Feature(F_EMISSION_MAP, 0..1, "Debugs");
+	// Feature(F_DIFFUSE_MAP, 0..1, "Debugs");
+	// Feature(F_NORMAL_MAP, 0..1, "Debugs");
+	// Feature(F_METAL_MAP, 0..1, "Debugs");
+	// Feature(F_ROUGH_MAP, 0..1, "Debugs");
+	// Feature(F_IRIDESCENCE_MAP, 0..1, "Debugs");
+	// Feature(F_IRIDESCENCE_MASK_MAP, 0..1, "Debugs");
+	// Feature(F_EMISSION_MAP, 0..1, "Debugs");
 
-	FeatureRule(Allow1(F_DIFFUSE_MAP, F_METAL_MAP, F_NORMAL_MAP, F_IRIDESCENCE_MAP, F_IRIDESCENCE_MASK_MAP, F_EMISSION_MAP), "");
+	// FeatureRule(Allow1(F_DIFFUSE_MAP, F_METAL_MAP, F_NORMAL_MAP, F_IRIDESCENCE_MAP, F_IRIDESCENCE_MASK_MAP, F_EMISSION_MAP), "");
 
 
 }
@@ -175,7 +175,7 @@ PS
 {
 	#define CUSTOM_TEXTURE_FILTERING
 	//Should be POINT instead of ANISOTROPIC for better accuracy, but POINT causes weird artifact type things 
-    SamplerState TextureFiltering2 < Filter( ANISOTROPIC ); AddressU( BORDER ); AddressV( BORDER ); AddressW( BORDER ); MaxAniso( 8 ); >;
+    SamplerState TextureFiltering2 < Filter( NEAREST ); AddressU( BORDER ); AddressV( BORDER ); MaxAniso( 8 ); >;
 	SamplerState TextureFiltering < Filter( (F_TEXTURE_FILTERING == 0 ? ANISOTROPIC : ( F_TEXTURE_FILTERING == 1 ? BILINEAR : ( F_TEXTURE_FILTERING == 2 ? TRILINEAR : ( F_TEXTURE_FILTERING == 3 ? POINT : NEAREST ) ) ) ) ); MaxAniso( 8 ); >;
 
 	//Includes
@@ -185,6 +185,7 @@ PS
 	#include "common/pixel.material.structs.hlsl"
 	#include "common/pixel.lighting.hlsl"
 	#include "common/pixel.shading.hlsl"
+	#include "common/pixel.color.blending.hlsl"
 
 	#include "common/pixel.material.helpers.hlsl"
 	//---------------------------------------------------------------------------------------------
@@ -193,61 +194,63 @@ PS
 	StaticCombo( S_DYE_MAP, F_DYE_MAP, Sys( PC ) );
 
 	//Debug/buffer view modes
-	StaticCombo( S_DIFFUSE_MAP, F_DIFFUSE_MAP, Sys( PC ) );
-	StaticCombo( S_NORMAL_MAP, F_NORMAL_MAP, Sys( PC ) );
-	StaticCombo( S_METAL_MAP, F_METAL_MAP, Sys( PC ) );
-	//StaticCombo( S_ROUGH_MAP, F_ROUGH_MAP, Sys( PC ) );
-	StaticCombo( S_IRIDESCENCE_MAP, F_IRIDESCENCE_MAP, Sys( PC ) );
-	StaticCombo( S_IRIDESCENCE_MASK_MAP, F_IRIDESCENCE_MASK_MAP, Sys( PC ) );
-	StaticCombo( S_EMISSION_MAP, F_EMISSION_MAP, Sys( PC ) );
+	// StaticCombo( S_DIFFUSE_MAP, F_DIFFUSE_MAP, Sys( PC ) );
+	// StaticCombo( S_NORMAL_MAP, F_NORMAL_MAP, Sys( PC ) );
+	// StaticCombo( S_METAL_MAP, F_METAL_MAP, Sys( PC ) );
+	// StaticCombo( S_ROUGH_MAP, F_ROUGH_MAP, Sys( PC ) );
+	// StaticCombo( S_IRIDESCENCE_MAP, F_IRIDESCENCE_MAP, Sys( PC ) );
+	// StaticCombo( S_IRIDESCENCE_MASK_MAP, F_IRIDESCENCE_MASK_MAP, Sys( PC ) );
+	// StaticCombo( S_EMISSION_MAP, F_EMISSION_MAP, Sys( PC ) );
 
 	//---------------------------------------------------------------------------------------------
 	//Main texture inputs
 
-	CreateInputTexture2D( TextureColor, Srgb, 8, "", "_Diffuse", "Material,10/19", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureColor, Srgb, 8, "", "_Diffuse", "Material,10/0", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tDiffuse ) < Channel( RGBA, Box( TextureColor ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tDiffuse, g_tDiffuse );
 
-	CreateInputTexture2D( TextureGStack, Linear, 8, "", "_GStack", "Material,10/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureGStack, Linear, 8, "", "_GStack", "Material,10/1", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tGStack ) < Channel( RGBA, Box( TextureGStack ), Linear ); OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tGStack, g_tGStack );
 
-	CreateInputTexture2D( TextureNormal, Linear, 8, "NormalizeNormals", "_Normal", "Material,10/21", Default3( 0.5, 0.5, 1 ) );
+	CreateInputTexture2D( TextureNormal, Linear, 8, "NormalizeNormals", "_Normal", "Material,10/2", Default3( 0.5, 0.5, 1 ) );
 	CreateTexture2DWithoutSampler( g_tNormal ) < Channel( RGBA, Box( TextureNormal ), Linear ); OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tNormal, g_tNormal );
 
-	CreateInputTexture2D( TextureDyeMap, Linear, 8, "", "_Dyemap", "Material,10/40", Default3( 1.0, 1.0, 1.0 ) );
-	CreateTexture2DWithoutSampler( g_tDyeTex ) < Channel( RGBA, Box( TextureDyeMap ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
-	TextureAttribute( g_tDyeTex, g_tDyeTex );
+	#if (S_DYE_MAP)
+		CreateInputTexture2D( TextureDyeMap, Linear, 8, "", "_Dyemap", "Material,10/3", Default3( 1.0, 1.0, 1.0 ) );
+		CreateTexture2DWithoutSampler( g_tDyeTex ) < Channel( RGBA, Box( TextureDyeMap ), Linear ); OutputFormat( BC7 ); SrgbRead( false ); >;
+		TextureAttribute( g_tDyeTex, g_tDyeTex );
+	#endif
 
-	CreateInputTexture2D( TextureIridescence, Srgb, 8, "", "_lookup", "Material,10/40", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureIridescence, Srgb, 8, "", "_lookup", "Material,10/4", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tIridescence ) < Channel( RGBA, Box( TextureIridescence ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tIridescence, g_tIridescence );
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
 	//Detail Texture Inputs
 
-	CreateInputTexture2D( TextureDetailDiffuse01, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureDetailDiffuse01, Srgb, 8, "", "", "Detail Textures,11/1", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tDetailDiffuse01 ) < Channel( RGBA, Box( TextureDetailDiffuse01 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tDetailDiffuse01, g_tDetailDiffuse01 );
 
-	CreateInputTexture2D( TextureDetailNormal01, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateInputTexture2D( TextureDetailNormal01, Linear, 8, "", "", "Detail Textures,11/2", Default3( 0.5, 0.5, 1 ) );
 	CreateTexture2DWithoutSampler( g_tDetailNormal01 ) < Channel( RGBA, Box( TextureDetailNormal01 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tDetailNormal01, g_tDetailNormal01 );
 
-	CreateInputTexture2D( TextureDetailDiffuse02, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureDetailDiffuse02, Srgb, 8, "", "", "Detail Textures,11/3", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tDetailDiffuse02 ) < Channel( RGBA, Box( TextureDetailDiffuse02 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tDetailDiffuse02, g_tDetailDiffuse02 );
 
-	CreateInputTexture2D( TextureDetailNormal02, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateInputTexture2D( TextureDetailNormal02, Linear, 8, "", "", "Detail Textures,11/4", Default3( 0.5, 0.5, 1 ) );
 	CreateTexture2DWithoutSampler( g_tDetailNormal02 ) < Channel( RGBA, Box( TextureDetailNormal02 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tDetailNormal02, g_tDetailNormal02 );
 
-	CreateInputTexture2D( TextureDetailDiffuse03, Srgb, 8, "", "", "Detail Textures,11/20", Default3( 1.0, 1.0, 1.0 ) );
+	CreateInputTexture2D( TextureDetailDiffuse03, Srgb, 8, "", "", "Detail Textures,11/5", Default3( 1.0, 1.0, 1.0 ) );
 	CreateTexture2DWithoutSampler( g_tDetailDiffuse03 ) < Channel( RGBA, Box( TextureDetailDiffuse03 ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tDetailDiffuse03, g_tDetailDiffuse03 );
 
-	CreateInputTexture2D( TextureDetailNormal03, Linear, 8, "", "", "Detail Textures,11/20", Default3( 0.5, 0.5, 1 ) );
+	CreateInputTexture2D( TextureDetailNormal03, Linear, 8, "", "", "Detail Textures,11/6", Default3( 0.5, 0.5, 1 ) );
 	CreateTexture2DWithoutSampler( g_tDetailNormal03 ) < Channel( RGBA, Box( TextureDetailNormal03 ), Linear );  OutputFormat( BC7 ); SrgbRead( false ); >;
 	TextureAttribute( g_tDetailNormal03, g_tDetailNormal03 );
 
@@ -662,79 +665,48 @@ PS
 
 	//--------------------------------------------------------------------------------------------------------------------
 
-	//--------------------------------------------------------------------------------------------------------------------
-
-	//color space convert
-	void ColorspaceConversion_RGB_Linear_float(float4 In, out float4 Out)
+	//Helper functions
+	float3 Bungie_Overlay (float3 cBase, float3 cBlend, float fac)
 	{
-		float4 linearRGBLo = In / 12.92;;
-		float4 linearRGBHi = pow(max(abs((In + 0.055) / 1.055), 1.192092896e-07), float4(2.4, 2.4, 2.4, 1));
-		Out = float4(In <= 0.04045) ? linearRGBLo : linearRGBHi;
-	}
-	
-	void ColorspaceConversion_RGB_Linear_float(float In, out float Out)
-	{
-		float linearRGBLo = In / 12.92;;
-		float linearRGBHi = pow(max(abs((In + 0.055) / 1.055), 1.192092896e-07), float3(2.4, 2.4, 2.4));
-		Out = In <= 0.04045 ? linearRGBLo : linearRGBHi;
-	}
-	
-	void ColorspaceConversion_Linear_RGB_float(float4 In, out float4 Out)
-	{
-		float4 sRGBLo = In * 12.92;
-		float4 sRGBHi = (pow(max(abs(In), 1.192092896e-07), float4(1.0 / 2.4, 1.0 / 2.4, 1.0 / 2.4, 1.0)) * 1.055) - 0.055;
-		Out = float4(In <= 0.0031308) ? sRGBLo : sRGBHi;
-	}
-	
-	void ColorspaceConversion_Linear_RGB_float(float In, out float Out)
-	{
-		float sRGBLo = In * 12.92;
-		float sRGBHi = (pow(max(abs(In), 1.192092896e-07), float3(1.0 / 2.4, 1.0 / 2.4, 1.0 / 2.4)) * 1.055) - 0.055;
-		Out = In <= 0.0031308 ? sRGBLo : sRGBHi;
-	}
-
-	//Blend modes
-	float4 Overlay (float4 cBase, float4 cBlend, float fac)
-	{
-		float4 cNew = cBlend * saturate(cBase * 4.0f) + saturate(cBase - 0.25f);
-		cNew.a = 1.0;
+		float3 cNew = cBlend * saturate(cBase * 4.0f) + saturate(cBase - 0.25f);
 		return lerp(cBase, cNew, fac);
 	}
 	
-	float4 HardLight (float4 cBase, float4 cBlend, float fac)
+	float3 Bungie_HardLight (float3 cBase, float3 cBlend, float fac)
 	{
-		float4 cNew = cBase * saturate(cBlend * 4.0f) + saturate(cBlend - 0.25f);
-		cNew.a = 1.0;
+		float3 cNew = cBase * saturate(cBlend * 4.0f) + saturate(cBlend - 0.25f);
 		return lerp(cBase, cNew, fac);
 	}
-	
-	float4 BlendMode_Overlay(float4 cBase, float4 cBlend)
-	{
-		float isLessOrEq = step(cBase, .5);
-		float4 cNew = lerp(2*cBlend*cBase, 1 - (1 - 2*(cBase - .5))*(1 - cBlend), isLessOrEq);
-		return cNew;
-	}
-	////////////
-	
+
 	float Remap (float val, float4 remap)
 	{
 		return clamp( val * remap.y + remap.x, remap.z, remap.z + remap.w );
 	}
 	
-
 	void NormalReconstructZ_float(float2 In, out float3 Out)
 	{
 		float reconstructZ = sqrt(1.0 - saturate(dot(In.xy, In.xy)));
 		float3 normalVector = float3(In.x, In.y, reconstructZ);
 		Out = normalize(normalVector);
 	}
+	////
 
 	class ShadingModelD2Gear : ShadingModel //just the valve shading model (just using here in case it gets removed at some point)
 	{
 		CombinerInput Input;
 		LightingTerms_t lightingTerms;
-		float3 specColor;
-		float specStrength;
+		float3 outSpecualar;
+
+		// Reconstruct normals from world normal, we discard the one from the normal map because
+		// it's easier as an API to just pass the world normal.
+		float3 NormalWorldToTangent( PixelInput i, float3 vNormalWs )
+		{
+			#if ENABLE_NORMAL_MAPS
+				return Vec3WsToTs( vNormalWs.xyz, i.vNormalWs, -i.vTangentUWs.xyz, -i.vTangentVWs.xyz ) * float3( 1,-1, 1);
+			#else
+				return float3( 0, 0, 1 );
+			#endif
+		}
 
 		CombinerInput MaterialToCombinerInput( PixelInput i, Material m )
 		{
@@ -760,7 +732,7 @@ PS
 			o = CalculateDiffuseAndSpecularFromAlbedoAndMetalness( o, m.Albedo.rgb, m.Metalness );
 
 			o.vNormalWs = m.Normal;
-			o.vNormalTs = 0.0f;
+			o.vNormalTs = NormalWorldToTangent( i, m.Normal );
 			o.vRoughness = m.Roughness.xx;
 			o.vEmissive = m.Emission;
 			o.flAmbientOcclusion = m.AmbientOcclusion.x;
@@ -798,17 +770,18 @@ PS
 			lightingTerms.vIndirectSpecular.rgb *= vSpecularAO.rgb;
 			lightingTerms.vSpecular.rgb *= lerp( float3( 1.0, 1.0, 1.0 ), vSpecularAO.rgb, Input.flAmbientOcclusionDirectSpecular );
 
+
 			LightShade o;
 			o.Diffuse = ( ( lightingTerms.vDiffuse.rgb + lightingTerms.vIndirectDiffuse.rgb ) * Input.vDiffuseColor.rgb ) + Input.vEmissive.rgb;
-			o.Specular = (lightingTerms.vSpecular.rgb + lightingTerms.vIndirectSpecular.rgb);
+			o.Specular = lightingTerms.vSpecular.rgb + lightingTerms.vIndirectSpecular.rgb;
+			outSpecualar = o.Specular.rgb;
 			return o;
 		}
 
 		float4 PostProcess( float4 vColor )
 		{
-			//No post processing
 			PixelOutput o;
-			o.vColor = vColor;
+			o.vColor = float4( vColor.rgb, Input.flOpacity );
 			o = PS_FinalCombinerDoPostProcessing( Input, lightingTerms, o );
 			return o.vColor;
 		}
@@ -823,32 +796,31 @@ PS
 		float2 vUVs = i.vTextureCoords.xy;
 		//float2 slots = float2(0,0);
 
-		float4 diffusetex = Tex2DS(g_tDiffuse, TextureFiltering, vUVs );
-		float4 flGStack = Tex2DS( g_tGStack, TextureFiltering, vUVs );
-		float4 normaltex = Tex2DS(g_tNormal, TextureFiltering, vUVs );
-
-		float4 flDyeMap = Tex2DS( g_tDyeTex, TextureFiltering, vUVs );
-		flDyeMap = pow(flDyeMap, 2.233333333);
-		ColorspaceConversion_Linear_RGB_float(flDyeMap, flDyeMap);
+		float4 diffuseTex = Tex2DS(g_tDiffuse, TextureFiltering, vUVs );
+		float4 gstackTex = Tex2DS( g_tGStack, TextureFiltering, vUVs );
+		float4 normalTex = Tex2DS(g_tNormal, TextureFiltering, vUVs );
 
 		// Alpha clipping is done as early as possible to minimize extraneous processing cycles
 		float transparency = 1;
 		if (i.vSlots.y < 0.5)
 		{
-			transparency = saturate(flGStack.b * 7.96875);
+			transparency = saturate(gstackTex.b * 7.96875);
 			clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
 		}  
 		#if(S_DECAL)
-			transparency = diffusetex.a;
+			transparency = diffuseTex.a;
 			clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
-			flGStack = float4(0.5,0.5,0,0);
+			gstackTex = float4(0.5,0.5,0,0);
 		#endif
 
-		float flAmbientOcclusion = flGStack.r;
-		float flRoughness = saturate(1 - flGStack.g);
+		float flAmbientOcclusion = pow(gstackTex.r, 2.2);
+		float flRoughness = saturate(1 - gstackTex.g);
 		//
 		
 		#if (S_DYE_MAP)
+			float4 flDyeMap = Tex2DS( g_tDyeTex, TextureFiltering, vUVs );
+			SrgbGammaToLinear(flDyeMap);
+
 			if (flDyeMap.a > 0.5f)
 			{
 				bool red = flDyeMap.r > 0.5;
@@ -1027,11 +999,11 @@ PS
 
 
 		//Finish GStack splitting
-		float flEmit = saturate((flGStack.b - 0.15686274509) * 1.18604651163);
-		float flUndyedmetal = saturate(flGStack.a * 7.96875);
-		int inDyemask = step(0.15686274509, flGStack.a);
-		float flWearmask = saturate((flGStack.a - 0.18823529411) * 1.23188405797);
-		//float flMetal = saturate(flGStack.a * 7.96876f); //(Alpha Channel * 7.96876)
+		float flEmit = saturate((gstackTex.b - 0.15686274509) * 1.18604651163);
+		float flUndyedmetal = saturate(gstackTex.a * 7.96875);
+		int inDyemask = step(0.15686274509, gstackTex.a);
+		float flWearmask = saturate(mad(gstackTex.a, 1.186, -0.186));
+		//float flMetal = saturate(gstackTex.a * 7.96876f); //(Alpha Channel * 7.96876)
 		
 		//wear
 		float mappedWear = Remap(flWearmask, wearRemap);
@@ -1041,95 +1013,91 @@ PS
 		float dyeNormalBlend = lerp(wornNormBlend, normBlend, mappedWear);
 		
 		// Color
-		float4 diffuse = Overlay(diffusetex, dyeColor, inDyemask);
-		//diffuse = pow(diffuse, 2.233333333);
-		//ColorspaceConversion_RGB_Linear_float(diffuse, diffuse);
-
-		diffuse = HardLight(diffuse, detailDiff, inDyemask * dyeDiffuseBlend);
-		//ColorspaceConversion_Linear_RGB_float(diffuse.rgba, diffuse.rgba);
+		float3 diffuse = Bungie_Overlay(diffuseTex.rgb, dyeColor.rgb, inDyemask);
+		diffuse = Bungie_HardLight(diffuse, detailDiff.rgb, inDyemask * dyeDiffuseBlend);
+			
+		//diffuse = Bungie_HardLight(diffuse, detailDiff, inDyemask * dyeDiffuseBlend);
 	
 		// Roughness
-		float detailedRoughness = lerp(flGStack.g, Overlay(flGStack.g, detailDiff.a, inDyemask), dyeRoughBlend);
+		float detailedRoughness = lerp(gstackTex.g, Bungie_Overlay(gstackTex.g, detailDiff.a, inDyemask), dyeRoughBlend);
 		float mainRough = Remap(detailedRoughness, roughnessRemap);
 		float wornRough = Remap(detailedRoughness, wornRoughRemap);
 		float dyeRoughness = lerp(wornRough, mainRough, mappedWear);
 		dyeRoughness = dyeRoughness * lerp(0.86, fuzz * 2, step(dyeRoughness, 0));
-		float roughness = 1 - lerp(flGStack.g, dyeRoughness, inDyemask);
-		ColorspaceConversion_Linear_RGB_float(roughness, roughness);
+		float roughness = 1 - lerp(gstackTex.g, dyeRoughness, inDyemask);
 		
 		// Emission
 		emission *= flEmit;
 		
 		// Normal maps
-		float3 tnormal = saturate((lerp(normaltex, BlendMode_Overlay(normaltex, detailNorm), inDyemask * dyeNormalBlend)));
-		float cavity = saturate(lerp(normaltex.z, normaltex.z * detailNorm.z, inDyemask * dyeNormalBlend));
+		float3 tnormal = saturate((lerp(normalTex, Overlay_blend(normalTex, detailNorm), inDyemask * dyeNormalBlend)));
+		float cavity = saturate(lerp(normalTex.z, normalTex.z * detailNorm.z, inDyemask * dyeNormalBlend));
 		
-		NormalReconstructZ_float(tnormal.xy, tnormal);
+		//NormalReconstructZ_float(tnormal.xy, tnormal);
 
 		//cavity = tnormal.z;
 		//invert Y channel of the normal map
 		tnormal.y = 1-tnormal.y;
 	
 		//Iridescence part 1
-		float3 wearRemapB = float3(wearRemap.w, metal, wornMetal);
-		float iridescenceMask = ((inDyemask-(float)color) - saturate(mad(wearRemapB.y, 10000.0, 0))) * ((iridescenceID > 0 ? 1 : 0) - saturate(frac((floor(iridescenceID) + 1) / 2) * 10));
+		float colorAsFloat = (color.r + color.g + color.b) / 3.0;
+		float iridescenceMask = ((inDyemask-colorAsFloat) - saturate(mad(metal, 10000.0, 0))) * ((iridescenceID > 0 ? 1 : 0) - saturate(frac((floor(iridescenceID) + 1) / 2) * 10));
 		
 		// Metalness
-		float iridescenceMetalMask = ( ( saturate(mad(iridescenceID/128, 1000000, -249992)) * saturate(mad(iridescenceID/128, -1000000, 445312)) ) * (saturate(frac((floor(iridescenceID) + 1) / 2) * 10)) ) + ((saturate(frac((floor(iridescenceID) + 1) / 2) * 10))-(float)color);
-		float dyeMetal = saturate( lerp(lerp(wornMetal, metal, mappedWear), 1, iridescenceMetalMask));
+		float iridescenceMetalMask = ( ( saturate(mad(iridescenceID/128, 1000000, -249992)) * saturate(mad(iridescenceID/128, -1000000, 445312)) ) * (saturate(frac((floor(iridescenceID) + 1) / 2) * 10)) ) + ((saturate(frac((floor(iridescenceID) + 1) / 2) * 10))-colorAsFloat);
+		float dyeMetal = lerp(lerp(wornMetal, metal, mappedWear), 1, iridescenceMetalMask);
 		float metalness = lerp(flUndyedmetal, dyeMetal, inDyemask);
 
-		float3 PositionWs = i.vPositionWithOffsetWs + g_vCameraPositionWs;
-		float viewDir = dot(TransformNormal( i, saturate(DecodeHemiOctahedronNormal( tnormal.xy ))), CalculatePositionToCameraDirWs( PositionWs ));
-		
-		float4 iridescenceColor = Tex2DS(g_tIridescence, TextureFiltering2, float2(viewDir, (0.5f + iridescenceID)/128.0f) ).rgba;
-		float3 iridescenceCheck = lerp(float3(0.01, 0.01, 0.01), iridescenceColor.rgb, saturate(iridescenceMask));
-		float iridescenceDiffuseCheck = ((saturate(frac((floor(iridescenceID) + 1) / 2) * 10))-(float)color) * inDyemask;
-
-		//Finish up Iridescence
-		diffuse = lerp(diffuse, saturate(iridescenceColor), iridescenceDiffuseCheck);
-		float3 specColor = saturate(lerp(iridescenceCheck, diffuse.rgb, metalness)*pow(cavity, 0.4f));
-		float specStrength = 0.25 * (1 - iridescenceMask);
-
-		// Finish up AO
-		flAmbientOcclusion = (diffuse * flGStack.r * (1 - flGStack.r) + flGStack.r);
-		diffuse *= flAmbientOcclusion;
-
-		float3 newDiffuse = diffuse.rgb * (lerp(lerp(float3(1,1,1), float3(0,0,0), saturate(metalness) ), (1-iridescenceColor.a), saturate(iridescenceMask)));
-		
-		/// Create material halfway to get the correct normal map
-		Material material = ToMaterial(i, float4(saturate(newDiffuse+specColor), 1), float4(tnormal, 1), float4(roughness, metalness, flAmbientOcclusion, 1 ), float3( 1.0f, 1.0f, 1.0f ), emission);
-		///
-
-		if (iridescenceID % 2 != 0 && iridescenceID != -1) //Even iridescenceID
+		if (iridescenceID % 2 == 0 && iridescenceID != -1) //Even iridescenceID
 		{
-			material.Metalness = 1;
+			metalness = 1;
 		}
 
-		//DONE!!!!?
+		float3 PositionWs = i.vPositionWithOffsetWs + g_vCameraPositionWs;
+		float viewDir = dot(TransformNormal( i, normalize(DecodeNormal( float3(tnormal.xy,1)) )), CalculatePositionToCameraDirWs( PositionWs ));
+		
+		float4 iridescenceColor = Tex2DS(g_tIridescence, TextureFiltering2, float2(viewDir, (0.5f + iridescenceID)/128.0f) ).rgba;
+		float3 iridescenceCheck = lerp(float3(0, 0, 0), iridescenceColor.rgb, saturate(iridescenceMask));
+		float iridescenceDiffuseCheck = frac((round(iridescenceID) + 1) / 2);
+		iridescenceDiffuseCheck = (saturate(iridescenceDiffuseCheck*10)-colorAsFloat) * inDyemask;
 
+		//Finish up diffuse
+		diffuse = lerp(diffuse.rgb, iridescenceColor.rgb, iridescenceDiffuseCheck);
+		diffuse *= flAmbientOcclusion;
+
+		float3 specColor = saturate(lerp(iridescenceCheck, diffuse.rgb, metalness)*pow(cavity, 0.4f));
+		float specStrength = 0.25 * (1 - iridescenceMask);
+		float3 newDiffuse = diffuse.rgb * (lerp(lerp(float3(1,1,1), float3(0,0,0), saturate(metalness) ), (1-iridescenceColor.a), saturate(iridescenceMask)));
+		
+		//float3 specColor_1 = lerp(float3(0,0,0), diffuse, metalness);
+		//float3 newDiffuse_1 = lerp(diffuse, float3(0,0,0), metalness);
+
+		Material material = ToMaterial(i, float4(saturate(newDiffuse+specColor), 1), float4(tnormal, 1), float4(roughness, metalness, flAmbientOcclusion, 1 ), float3( 1.0f, 1.0f, 1.0f ), emission);
+
+		//DONE!!!!?
+		//material.Albedo = specColor;
 		//////DEBUG OUTPUTS
-		#if (S_DIFFUSE_MAP)
-			material.Albedo = newDiffuse;
-			material.Emission = newDiffuse;
-		#elif (S_NORMAL_MAP)
-			material.Albedo = tnormal;
-			material.Emission = tnormal;
-		#elif (S_METAL_MAP)
-			material.Albedo = material.Metalness;
-			material.Emission = material.Metalness;
+		// #if (S_DIFFUSE_MAP)
+		// 	material.Albedo = saturate(newDiffuse+specColor);
+		// 	material.Emission = saturate(newDiffuse+specColor);
+		// #elif (S_NORMAL_MAP)
+		// 	material.Albedo = SrgbGammaToLinear(tnormal);
+		// 	material.Emission = SrgbGammaToLinear(tnormal);
+		// #elif (S_METAL_MAP)
+		// 	material.Albedo = metalness;
+		// 	material.Emission = metalness;
 		// #elif (S_ROUGH_MAP)
-		// 	m.Albedo = roughness;
-		#elif (S_IRIDESCENCE_MAP)
-			material.Albedo = specColor;
-			material.Emission = specColor;
-		#elif (S_IRIDESCENCE_MASK_MAP)
-			material.Albedo = iridescenceMask;
-			material.Emission = iridescenceMask;
-		#elif (S_EMISSION_MAP)
-			material.Albedo = material.Emission;
-			material.Emission = material.Emission;
-		#endif
+		//  	material.Albedo = roughness;
+		// #elif (S_IRIDESCENCE_MAP)
+		// 	material.Albedo = specColor;
+		// 	material.Emission = specColor;
+		// #elif (S_IRIDESCENCE_MASK_MAP)
+		// 	material.Albedo = iridescenceMask;
+		// 	material.Emission = iridescenceMask;
+		// #elif (S_EMISSION_MAP)
+		// 	material.Albedo = material.Emission;
+		// 	material.Emission = material.Emission;
+		// #endif
 
 		//ShadingModelValveStandard sm;
 
@@ -1137,8 +1105,8 @@ PS
 
 		sm.Init(i, material);
 
-		sm.specColor = specColor;
-		sm.specStrength = specStrength;
+		//material.Albedo = sm.outSpecualar;
+		//sm.specStrength = specStrength;
 
 		return FinalizePixelMaterial( i, material, sm );
 	}

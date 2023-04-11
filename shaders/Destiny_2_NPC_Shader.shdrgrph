@@ -1,0 +1,478 @@
+{
+  "Model": "models/dev/plane.vmdl",
+  "Description": "",
+  "BlendMode": "Masked",
+  "nodes": [
+    {
+      "_class": "Result",
+      "Albedo": {
+        "Identifier": "1",
+        "Output": "Result"
+      },
+      "Emission": {
+        "Identifier": "14",
+        "Output": "Result"
+      },
+      "Opacity": {
+        "Identifier": "26",
+        "Output": "Result"
+      },
+      "Normal": {
+        "Identifier": "23",
+        "Output": "Result"
+      },
+      "Roughness": {
+        "Identifier": "7",
+        "Output": "Result"
+      },
+      "Metalness": {
+        "Identifier": "5",
+        "Output": "X"
+      },
+      "AmbientOcclusion": {
+        "Identifier": "5",
+        "Output": "Z"
+      },
+      "DefaultOpacity": 1,
+      "DefaultRoughness": 1,
+      "DefaultMetalness": 0,
+      "DefaultAmbientOcclusion": 1,
+      "Identifier": "0",
+      "Position": "-816,64"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "Diffuse",
+        "Default": "1,1,1,1",
+        "ImageFormat": "BC7",
+        "SrgbRead": true,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "1",
+      "Position": "-2352,-192"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "MRC",
+        "Default": "1,1,1,1",
+        "ColorSpace": "Linear",
+        "ImageFormat": "BC7",
+        "Priority": 1,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "2",
+      "Position": "-2352,32"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "Normal",
+        "Default": "0.49804,0.49804,1,1",
+        "Extension": "Normal",
+        "ColorSpace": "Linear",
+        "ImageFormat": "BC7",
+        "Priority": 2,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "3",
+      "Position": "-2352,240"
+    },
+    {
+      "_class": "TextureCoord",
+      "UseSecondaryCoord": false,
+      "Tiling": "1,1",
+      "Identifier": "4",
+      "Position": "-3056,80"
+    },
+    {
+      "_class": "SplitVector",
+      "Input": {
+        "Identifier": "2",
+        "Output": "Result"
+      },
+      "Identifier": "5",
+      "Position": "-2144,32"
+    },
+    {
+      "_class": "Multiply",
+      "A": {
+        "Identifier": "1",
+        "Output": "Result"
+      },
+      "B": {
+        "Identifier": "5",
+        "Output": "Z"
+      },
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "6",
+      "Position": "-1808,-256"
+    },
+    {
+      "_class": "Subtract",
+      "A": {},
+      "B": {
+        "Identifier": "5",
+        "Output": "Y"
+      },
+      "DefaultA": 1,
+      "DefaultB": 1,
+      "Identifier": "7",
+      "Position": "-1856,48"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "Emission Map",
+        "Default": "0,0,0,1",
+        "ImageFormat": "BC7",
+        "SrgbRead": true,
+        "Priority": 4,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "8",
+      "Position": "-2352,640"
+    },
+    {
+      "_class": "SplitVector",
+      "Input": {
+        "Identifier": "8",
+        "Output": "Result"
+      },
+      "Identifier": "9",
+      "Position": "-2144,640"
+    },
+    {
+      "_class": "Multiply",
+      "A": {
+        "Identifier": "11",
+        "Output": "Result"
+      },
+      "B": {
+        "Identifier": "12",
+        "Output": "Result"
+      },
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "10",
+      "Position": "-1664,656"
+    },
+    {
+      "_class": "Float4",
+      "Name": "Emission Color",
+      "Value": "0,0,0,1",
+      "UI": {
+        "Type": "Color",
+        "PrimaryGroup": {
+          "Name": "Parameters"
+        },
+        "SecondaryGroup": {
+          "Name": "Emission"
+        }
+      },
+      "Identifier": "11",
+      "Position": "-2352,864"
+    },
+    {
+      "_class": "Multiply",
+      "A": {
+        "Identifier": "13",
+        "Output": "Result"
+      },
+      "B": {
+        "Identifier": "9",
+        "Output": "X"
+      },
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "12",
+      "Position": "-1856,656"
+    },
+    {
+      "_class": "Float",
+      "Min": 0,
+      "Max": 10,
+      "Name": "Emission Strength",
+      "Value": 1,
+      "UI": {
+        "PrimaryGroup": {
+          "Name": "Parameters"
+        },
+        "SecondaryGroup": {
+          "Name": "Emission"
+        }
+      },
+      "Identifier": "13",
+      "Position": "-2144,576"
+    },
+    {
+      "_class": "Multiply",
+      "A": {
+        "Identifier": "10",
+        "Output": "Result"
+      },
+      "B": {},
+      "DefaultA": 1,
+      "DefaultB": 10,
+      "Identifier": "14",
+      "Position": "-1456,640"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "16",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "Detail Normal",
+        "Default": "0.49804,0.49804,1,1",
+        "Extension": "Normal",
+        "ColorSpace": "Linear",
+        "ImageFormat": "BC7",
+        "Priority": 3,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "15",
+      "Position": "-2352,432"
+    },
+    {
+      "_class": "TileAndOffset",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Tile": {
+        "Identifier": "17",
+        "Output": "Result"
+      },
+      "Offset": {},
+      "DefaultTile": "1,1",
+      "DefaultOffset": "0,0",
+      "WrapTo01": false,
+      "Identifier": "16",
+      "Position": "-2784,480"
+    },
+    {
+      "_class": "Float",
+      "Min": 0,
+      "Max": 100,
+      "Name": "Detail Normal Scale",
+      "Value": 5,
+      "UI": {
+        "PrimaryGroup": {
+          "Name": "Parameters"
+        },
+        "SecondaryGroup": {
+          "Name": "Normal"
+        }
+      },
+      "Identifier": "17",
+      "Position": "-3008,528"
+    },
+    {
+      "_class": "Blend",
+      "A": {
+        "Identifier": "3",
+        "Output": "Result"
+      },
+      "B": {
+        "Identifier": "15",
+        "Output": "Result"
+      },
+      "C": {
+        "Identifier": "19",
+        "Output": "Result"
+      },
+      "Fraction": 1,
+      "BlendMode": "Overlay",
+      "Clamp": true,
+      "Identifier": "18",
+      "Position": "-1904,336"
+    },
+    {
+      "_class": "Float",
+      "Min": 0,
+      "Max": 1,
+      "Name": "Detail Normal Factor",
+      "Value": 0,
+      "UI": {
+        "PrimaryGroup": {
+          "Name": "Parameters"
+        },
+        "SecondaryGroup": {
+          "Name": "Normal"
+        }
+      },
+      "Identifier": "19",
+      "Position": "-2144,480"
+    },
+    {
+      "_class": "SplitVector",
+      "Input": {
+        "Identifier": "18",
+        "Output": "Result"
+      },
+      "Identifier": "20",
+      "Position": "-1712,336"
+    },
+    {
+      "_class": "CombineVector",
+      "X": {
+        "Identifier": "20",
+        "Output": "X"
+      },
+      "Y": {
+        "Identifier": "22",
+        "Output": "Result"
+      },
+      "Z": {
+        "Identifier": "20",
+        "Output": "Z"
+      },
+      "W": {
+        "Identifier": "20",
+        "Output": "W"
+      },
+      "DefaultX": 0,
+      "DefaultY": 0,
+      "DefaultZ": 0,
+      "DefaultW": 0,
+      "Identifier": "21",
+      "Position": "-1408,336"
+    },
+    {
+      "_class": "Subtract",
+      "A": {},
+      "B": {
+        "Identifier": "20",
+        "Output": "Y"
+      },
+      "DefaultA": 1,
+      "DefaultB": 1,
+      "Identifier": "22",
+      "Position": "-1520,384"
+    },
+    {
+      "_class": "TransformNormal",
+      "Input": {
+        "Identifier": "21",
+        "Output": "Vector"
+      },
+      "DecodeNormal": true,
+      "Identifier": "23",
+      "Position": "-1088,448"
+    },
+    {
+      "_class": "TextureSampler",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      },
+      "Texture": "textures/dev/white.vtex",
+      "Sampler": {},
+      "UI": {
+        "Name": "Alpha Mask",
+        "Default": "1,1,1,1",
+        "ImageFormat": "BC7",
+        "SrgbRead": true,
+        "Priority": 5,
+        "PrimaryGroup": {
+          "Name": "Textures"
+        },
+        "SecondaryGroup": {
+          "Name": ""
+        }
+      },
+      "Identifier": "24",
+      "Position": "-2352,-416"
+    },
+    {
+      "_class": "SplitVector",
+      "Input": {
+        "Identifier": "24",
+        "Output": "Result"
+      },
+      "Identifier": "25",
+      "Position": "-2160,-416"
+    },
+    {
+      "_class": "Branch",
+      "True": {
+        "Identifier": "1",
+        "Output": "A"
+      },
+      "False": {
+        "Identifier": "25",
+        "Output": "X"
+      },
+      "A": {},
+      "B": {},
+      "Name": "Use Diffuse Alpha",
+      "Operator": "Equal",
+      "Enabled": false,
+      "UI": {
+        "PrimaryGroup": {
+          "Name": "Parameters"
+        },
+        "SecondaryGroup": {
+          "Name": "Alpha"
+        }
+      },
+      "Identifier": "26",
+      "Position": "-1808,-432"
+    }
+  ]
+}
