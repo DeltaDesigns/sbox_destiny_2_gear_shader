@@ -7,29 +7,13 @@ HEADER
 	Version = 1;
 }
 
+//=========================================================================================================================
+
 FEATURES
 {
 	#include "common/features.hlsl"
-}
-
-//=========================================================================================================================
-// Optional
-//=========================================================================================================================
-MODES
-{
-    VrForward();													// Indicates this shader will be used for main rendering
-    Depth( "vr_depth_only.vfx" ); 									// Shader that will be used for shadowing and depth prepass
-    ToolsVis( S_MODE_TOOLS_VIS ); 									// Ability to see in the editor
-    ToolsWireframe( "vr_tools_wireframe.vfx" ); 					// Allows for mat_wireframe to work
-	ToolsShadingComplexity( "vr_tools_shading_complexity.vfx" ); 	// Shows how expensive drawing is in debug view
-	Reflection( "high_quality_reflections.vfx" );
-}
-
-//=========================================================================================================================
-
-FEATURES
-{
 	Feature( F_HIGH_QUALITY_REFLECTIONS, 0..1, "Rendering" );
+	Feature( F_ALPHA_TEST, 0..1, "Blending" );
 
 	Feature(F_VERTEX_ANIMATION, 0..1, "Animation");
 	// Feature(F_VERTEXANIM_BLENDSHAPE, 0..1, "Animation");
@@ -51,13 +35,25 @@ FEATURES
 	// Feature(F_EMISSION_MAP, 0..1, "Debugs");
 
 	// FeatureRule(Allow1(F_DIFFUSE_MAP, F_METAL_MAP, F_NORMAL_MAP, F_IRIDESCENCE_MAP, F_IRIDESCENCE_MASK_MAP, F_EMISSION_MAP), "");
+}
 
-
+//=========================================================================================================================
+// Optional
+//=========================================================================================================================
+MODES
+{
+    VrForward();													    // Indicates this shader will be used for main rendering
+    Depth( S_MODE_DEPTH );
+    ToolsVis( S_MODE_TOOLS_VIS ); 									    // Ability to see in the editor
+    ToolsWireframe( "vr_tools_wireframe.shader" ); 					    // Allows for mat_wireframe to work
+	ToolsShadingComplexity( "vr_tools_shading_complexity.shader" ); 	// Shows how expensive drawing is in debug view
+	Reflection( "high_quality_reflections.shader" );
 }
 
 COMMON
 {
 	#include "common/shared.hlsl"
+	#define S_TRANSLUCENT 0
 	#define S_SPECULAR 1
     #define S_SPECULAR_CUBE_MAP 1
 	#define USES_HIGH_QUALITY_REFLECTIONS
@@ -173,12 +169,7 @@ VS
 
 PS
 {
-	#define CUSTOM_TEXTURE_FILTERING
-	//Should be POINT instead of ANISOTROPIC for better accuracy, but POINT causes weird artifact type things 
-    SamplerState TextureFiltering2 < Filter( NEAREST ); AddressU( BORDER ); AddressV( BORDER ); MaxAniso( 8 ); >;
-	SamplerState TextureFiltering < Filter( (F_TEXTURE_FILTERING == 0 ? ANISOTROPIC : ( F_TEXTURE_FILTERING == 1 ? BILINEAR : ( F_TEXTURE_FILTERING == 2 ? TRILINEAR : ( F_TEXTURE_FILTERING == 3 ? POINT : NEAREST ) ) ) ) ); MaxAniso( 8 ); >;
-
-	//Includes
+	//Includes - Dont want pixel.material.inputs to be included so have to define them manually
 	#include "sbox_pixel.fxc"
 
 	#include "common/pixel.config.hlsl"
@@ -188,8 +179,14 @@ PS
 	#include "common/pixel.color.blending.hlsl"
 
 	#include "common/pixel.material.helpers.hlsl"
+
+	#define CUSTOM_TEXTURE_FILTERING
+    SamplerState TextureFiltering2 < Filter( NEAREST ); AddressU( BORDER ); AddressV( BORDER ); MaxAniso( 4 ); >;
+
 	//---------------------------------------------------------------------------------------------
-	
+	StaticCombo( S_MODE_DEPTH, 0..1, Sys( ALL ) );
+    StaticCombo( S_ALPHA_TEST, F_ALPHA_TEST, Sys( ALL ) );
+
 	StaticCombo( S_DECAL, F_DECAL, Sys( PC ) );
 	StaticCombo( S_DYE_MAP, F_DYE_MAP, Sys( PC ) );
 
@@ -224,7 +221,7 @@ PS
 	#endif
 
 	CreateInputTexture2D( TextureIridescence, Srgb, 8, "", "_lookup", "Material,10/4", Default3( 1.0, 1.0, 1.0 ) );
-	CreateTexture2DWithoutSampler( g_tIridescence ) < Channel( RGBA, Box( TextureIridescence ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
+	CreateTexture2DWithoutSampler( g_tIridescence ) < Channel( RGBA, None( TextureIridescence ), Srgb ); OutputFormat( BC7 ); SrgbRead( true ); >;
 	TextureAttribute( g_tIridescence, g_tIridescence );
 
 	//--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
@@ -685,9 +682,14 @@ PS
 	
 	void NormalReconstructZ_float(float2 In, out float3 Out)
 	{
-		float reconstructZ = sqrt(1.0 - saturate(dot(In.xy, In.xy)));
-		float3 normalVector = float3(In.x, In.y, reconstructZ);
-		Out = normalize(normalVector);
+		float3 normalVector = float3(In.x, In.y, 0);
+		normalVector.x = mad(normalVector.x, 2, -1);
+		normalVector.y = mad(normalVector.y, 2, -1);
+		
+		normalVector.z = sqrt(1-saturate(mad(normalVector.x, normalVector.x, normalVector.y)));
+
+		normalVector = float3(normalVector.x, normalVector.y*-1, normalVector.z);
+		Out = (normalize(normalVector) + 1) / 2;
 	}
 	////
 
@@ -804,12 +806,12 @@ PS
 		float transparency = 1;
 		if (i.vSlots.y < 0.5)
 		{
-			transparency = saturate(gstackTex.b * 7.96875);
-			clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
+			transparency = saturate(mad(gstackTex.b, 1000, -50));
+			//clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
 		}  
 		#if(S_DECAL)
-			transparency = diffuseTex.a;
-			clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
+			transparency = saturate(mad(diffuseTex.a, 1000, -50));;
+			//clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
 			gstackTex = float4(0.5,0.5,0,0);
 		#endif
 
@@ -819,7 +821,6 @@ PS
 		
 		#if (S_DYE_MAP)
 			float4 flDyeMap = Tex2DS( g_tDyeTex, TextureFiltering, vUVs );
-			SrgbGammaToLinear(flDyeMap);
 
 			if (flDyeMap.a > 0.5f)
 			{
@@ -1015,8 +1016,6 @@ PS
 		// Color
 		float3 diffuse = Bungie_Overlay(diffuseTex.rgb, dyeColor.rgb, inDyemask);
 		diffuse = Bungie_HardLight(diffuse, detailDiff.rgb, inDyemask * dyeDiffuseBlend);
-			
-		//diffuse = Bungie_HardLight(diffuse, detailDiff, inDyemask * dyeDiffuseBlend);
 	
 		// Roughness
 		float detailedRoughness = lerp(gstackTex.g, Bungie_Overlay(gstackTex.g, detailDiff.a, inDyemask), dyeRoughBlend);
@@ -1032,50 +1031,64 @@ PS
 		// Normal maps
 		float3 tnormal = saturate((lerp(normalTex, Overlay_blend(normalTex, detailNorm), inDyemask * dyeNormalBlend)));
 		float cavity = saturate(lerp(normalTex.z, normalTex.z * detailNorm.z, inDyemask * dyeNormalBlend));
-		
-		//NormalReconstructZ_float(tnormal.xy, tnormal);
+		NormalReconstructZ_float(tnormal.xy, tnormal);
 
-		//cavity = tnormal.z;
-		//invert Y channel of the normal map
-		tnormal.y = 1-tnormal.y;
-	
 		//Iridescence part 1
+		float iridescenceDiffuseCheck = iridescenceID != -1 ? saturate(frac((round(iridescenceID) + 1) / 2)*10) : 0;
 		float colorAsFloat = (color.r + color.g + color.b) / 3.0;
-		float iridescenceMask = ((inDyemask-colorAsFloat) - saturate(mad(metal, 10000.0, 0))) * ((iridescenceID > 0 ? 1 : 0) - saturate(frac((floor(iridescenceID) + 1) / 2) * 10));
+		float iridescenceMask = 0;
 		
 		// Metalness
-		float iridescenceMetalMask = ( ( saturate(mad(iridescenceID/128, 1000000, -249992)) * saturate(mad(iridescenceID/128, -1000000, 445312)) ) * (saturate(frac((floor(iridescenceID) + 1) / 2) * 10)) ) + ((saturate(frac((floor(iridescenceID) + 1) / 2) * 10))-colorAsFloat);
+		float iridescenceMetalMask = saturate(mad(iridescenceID/128, 1000000, -249992)) * saturate(mad(iridescenceID/128, -1000000, 445312));
+		iridescenceMetalMask *= iridescenceDiffuseCheck;
+		iridescenceMetalMask = iridescenceMetalMask + (iridescenceDiffuseCheck-colorAsFloat);
+
 		float dyeMetal = lerp(lerp(wornMetal, metal, mappedWear), 1, iridescenceMetalMask);
 		float metalness = lerp(flUndyedmetal, dyeMetal, inDyemask);
 
-		if (iridescenceID % 2 == 0 && iridescenceID != -1) //Even iridescenceID
+		//Even and odd iridescence ids affect diffuse differently but always(?) makes metalness 1
+		if (iridescenceID % 2 != 0 && iridescenceID != -1) 
 		{
-			metalness = 1;
+			iridescenceMask = saturate(1 - colorAsFloat);
 		}
 
-		float3 PositionWs = i.vPositionWithOffsetWs + g_vCameraPositionWs;
-		float viewDir = dot(TransformNormal( i, normalize(DecodeNormal( float3(tnormal.xy,1)) )), CalculatePositionToCameraDirWs( PositionWs ));
-		
-		float4 iridescenceColor = Tex2DS(g_tIridescence, TextureFiltering2, float2(viewDir, (0.5f + iridescenceID)/128.0f) ).rgba;
-		float3 iridescenceCheck = lerp(float3(0, 0, 0), iridescenceColor.rgb, saturate(iridescenceMask));
-		float iridescenceDiffuseCheck = frac((round(iridescenceID) + 1) / 2);
-		iridescenceDiffuseCheck = (saturate(iridescenceDiffuseCheck*10)-colorAsFloat) * inDyemask;
+		//--Iridescence part 2: Fresnel boogaloo
+		// Get the world space position of our point
+        float3 vPositionWs = i.vPositionWithOffsetWs.xyz + g_vHighPrecisionLightingOffsetWs.xyz;
+        
+        // Multiview instancing
+        uint nViewId = 0;
+        #if( D_MULTIVIEW_INSTANCING )
+            nViewId = i.nView;
+        #endif
+        
+        // Get our camera direction
+        float3 vPositionToCameraDirWs = CalculatePositionToCameraDirWsMultiview( nViewId, vPositionWs );
+        
+        // View Dot Normal
+        float flVDotN =  dot( vPositionToCameraDirWs.xyz, TransformNormal( i, DecodeNormal( tnormal.xyz ) ));	
+		///
+
+		float4 iridescenceColor = Tex2DS(g_tIridescence, TextureFiltering2, float2(flVDotN, (0.5f + iridescenceID)/128.0f) ).rgba;
+		iridescenceDiffuseCheck = (iridescenceDiffuseCheck-colorAsFloat) * inDyemask;
 
 		//Finish up diffuse
-		diffuse = lerp(diffuse.rgb, iridescenceColor.rgb, iridescenceDiffuseCheck);
-		diffuse *= flAmbientOcclusion;
+		diffuse = lerp(diffuse.rgb, iridescenceColor.rgb, saturate(iridescenceDiffuseCheck));
+		//diffuse *= flAmbientOcclusion;
 
-		float3 specColor = saturate(lerp(iridescenceCheck, diffuse.rgb, metalness)*pow(cavity, 0.4f));
-		float specStrength = 0.25 * (1 - iridescenceMask);
-		float3 newDiffuse = diffuse.rgb * (lerp(lerp(float3(1,1,1), float3(0,0,0), saturate(metalness) ), (1-iridescenceColor.a), saturate(iridescenceMask)));
+		//*pow(cavity, 0.4f))
+		float3 specColor = (lerp(float3(0,0,0), diffuse, metalness)) + (lerp(lerp(float3(0,0,0), iridescenceColor.rgb, iridescenceMask), float3(0,0,0), metalness));
+		float3 diffuseColor = lerp(diffuse, float3(0,0,0), metalness);
 		
+		//float specStrength = 0.25 * (1 - iridescenceMask);
 		//float3 specColor_1 = lerp(float3(0,0,0), diffuse, metalness);
 		//float3 newDiffuse_1 = lerp(diffuse, float3(0,0,0), metalness);
 
-		Material material = ToMaterial(i, float4(saturate(newDiffuse+specColor), 1), float4(tnormal, 1), float4(roughness, metalness, flAmbientOcclusion, 1 ), float3( 1.0f, 1.0f, 1.0f ), emission);
-
+		Material material = ToMaterial(i, float4(saturate(diffuseColor+specColor), 1), float4(tnormal, 1), float4(saturate(roughness), saturate(metalness+iridescenceMask), saturate(flAmbientOcclusion), 1 ), float3( 1.0f, 1.0f, 1.0f ), emission);
+		material.Opacity = transparency;
 		//DONE!!!!?
-		//material.Albedo = specColor;
+		//material.Albedo = transparency;
+		
 		//////DEBUG OUTPUTS
 		// #if (S_DIFFUSE_MAP)
 		// 	material.Albedo = saturate(newDiffuse+specColor);
