@@ -11,6 +11,7 @@
   "HasCode": false,
   "CodePath": null,
   "PackageReferences": [],
+  "EditorReferences": null,
   "Metadata": {
     "Summary": "Destiny 2 Gear Shader for S\u0026Box",
     "Description": "Recreation of Destiny 2\u0027s gear shader system (WIP, you should know what you\u0027re doing if you\u0027re gonna use this)",

@@ -1084,10 +1084,16 @@ PS
 		//float3 specColor_1 = lerp(float3(0,0,0), diffuse, metalness);
 		//float3 newDiffuse_1 = lerp(diffuse, float3(0,0,0), metalness);
 
-		Material material = ToMaterial(i, float4(saturate(diffuseColor+specColor), 1), float4(tnormal, 1), float4(saturate(roughness), saturate(metalness+iridescenceMask), saturate(flAmbientOcclusion), 1 ), float3( 1.0f, 1.0f, 1.0f ), emission);
-		material.Opacity = transparency;
-		//DONE!!!!?
-		//material.Albedo = transparency;
+		Material material;
+        material.Albedo = saturate(diffuseColor+specColor);
+        material.Normal = TransformNormal( i, DecodeNormal( tnormal.xyz ) );
+        material.Roughness = saturate(roughness);
+        material.Metalness = saturate(metalness+iridescenceMask);
+        material.AmbientOcclusion = saturate(flAmbientOcclusion);
+        material.TintMask = 1;
+        material.Opacity = transparency;
+        material.Emission = emission;
+        material.Transmission = transmission;
 		
 		//////DEBUG OUTPUTS
 		// #if (S_DIFFUSE_MAP)
@@ -1113,13 +1119,8 @@ PS
 		// #endif
 
 		//ShadingModelValveStandard sm;
-
 		ShadingModelD2Gear sm;
-
 		sm.Init(i, material);
-
-		//material.Albedo = sm.outSpecualar;
-		//sm.specStrength = specStrength;
 
 		return FinalizePixelMaterial( i, material, sm );
 	}

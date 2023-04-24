@@ -133,21 +133,28 @@ PS
 		float4 colorFinal = float4( color1 + color2 + color3, 1 );
 
 		//Main material properties
-		Material m = ToMaterial(i, float4(0,0,0,1), Tex2DS( g_tNormal, TextureFiltering, vUV ), float4( 0.0f, 0.0f, 1.0f, 0.0f ) );
-		m.Opacity = gstack.g;
-		m.Emission = colorFinal * g_flEmitScale;
-	
+		Material material;
+        material.Albedo = float4(0,0,0,1);
+        material.Normal = TransformNormal( i, DecodeNormal( Tex2DS( g_tNormal, TextureFiltering, vUV ).xyz ) );
+        material.Roughness = 1;
+        material.Metalness = 0;
+        material.AmbientOcclusion = 1;
+        material.TintMask = 1;
+        material.Opacity = gstack.g;
+        material.Emission = colorFinal * g_flEmitScale;
+        material.Transmission = 0;
+		
 		if(g_flSpecularScale > 0)
 		{
-			m.Opacity = saturate(m.Opacity + g_flSpecularScale);
-			m.Albedo = g_flSpecularScale;
-			m.Metalness = 1;
-			m.Roughness = 0.04;
+			material.Opacity = saturate(material.Opacity + g_flSpecularScale);
+			material.Albedo = saturate(g_flSpecularScale);
+			material.Metalness = 1;
+			material.Roughness = 0.25;
 		}
 
 		ShadingModelValveStandard sm;
 		
-		return FinalizePixelMaterial( i, m, sm );
+		return FinalizePixelMaterial( i, material, sm );
 	}
 
 }
