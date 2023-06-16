@@ -52,12 +52,9 @@ MODES
 
 COMMON
 {
-	#include "common/shared.hlsl"
-	#define S_TRANSLUCENT 0
-	#define S_SPECULAR 1
-    #define S_SPECULAR_CUBE_MAP 1
 	#define USES_HIGH_QUALITY_REFLECTIONS
-	#define D_NO_MODEL_TINT 1
+	#define CUSTOM_MATERIAL_INPUTS
+	#include "common/shared.hlsl"
 }
 
 //=========================================================================================================================
@@ -169,16 +166,8 @@ VS
 
 PS
 {
-	//Includes - Dont want pixel.material.inputs to be included so have to define them manually
-	#include "sbox_pixel.fxc"
-
-	#include "common/pixel.config.hlsl"
-	#include "common/pixel.material.structs.hlsl"
-	#include "common/pixel.lighting.hlsl"
-	#include "common/pixel.shading.hlsl"
-	#include "common/pixel.color.blending.hlsl"
-
-	#include "common/pixel.material.helpers.hlsl"
+	#include "common/pixel.hlsl"
+	#include "blendmodes.hlsl"
 
 	#define CUSTOM_TEXTURE_FILTERING
     SamplerState TextureFiltering2 < Filter( NEAREST ); AddressU( BORDER ); AddressV( BORDER ); MaxAniso( 4 ); >;
@@ -691,103 +680,6 @@ PS
 		normalVector = float3(normalVector.x, normalVector.y*-1, normalVector.z);
 		Out = (normalize(normalVector) + 1) / 2;
 	}
-	////
-
-	class ShadingModelD2Gear : ShadingModel //just the valve shading model (just using here in case it gets removed at some point)
-	{
-		CombinerInput Input;
-		LightingTerms_t lightingTerms;
-		float3 outSpecualar;
-
-		// Reconstruct normals from world normal, we discard the one from the normal map because
-		// it's easier as an API to just pass the world normal.
-		float3 NormalWorldToTangent( PixelInput i, float3 vNormalWs )
-		{
-			#if ENABLE_NORMAL_MAPS
-				return Vec3WsToTs( vNormalWs.xyz, i.vNormalWs, -i.vTangentUWs.xyz, -i.vTangentVWs.xyz ) * float3( 1,-1, 1);
-			#else
-				return float3( 0, 0, 1 );
-			#endif
-		}
-
-		CombinerInput MaterialToCombinerInput( PixelInput i, Material m )
-		{
-			CombinerInput o;
-
-			o = PS_CommonProcessing( i );
-			
-			#if ( S_ALPHA_TEST )
-			{
-				// Clip first to try to kill the wave if we're in an area of all zero
-				o.flOpacity = m.Opacity * o.flOpacity;
-				clip( o.flOpacity - .001 );
-
-				o.flOpacity = AdjustOpacityForAlphaToCoverage( o.flOpacity, g_flAlphaTestReference, g_flAntiAliasedEdgeStrength, i.vTextureCoords.xy );
-				clip( o.flOpacity - 0.001 );
-			}
-			#elif ( S_TRANSLUCENT )
-			{
-				o.flOpacity *= m.Opacity * g_flOpacityScale;
-			}
-			#endif
-
-			o = CalculateDiffuseAndSpecularFromAlbedoAndMetalness( o, m.Albedo.rgb, m.Metalness );
-
-			o.vNormalWs = m.Normal;
-			o.vNormalTs = NormalWorldToTangent( i, m.Normal );
-			o.vRoughness = m.Roughness.xx;
-			o.vEmissive = m.Emission;
-			o.flAmbientOcclusion = m.AmbientOcclusion.x;
-			o.vTransmissiveMask = m.Transmission;
-
-			return o;
-		}
-
-		void Init( const PixelInput pixelInput, const Material material )
-		{
-			lightingTerms = InitLightingTerms();
-			Input = MaterialToCombinerInput( pixelInput, material );
-			Input.vGeometricNormalWs.xyz = material.Normal;
-			Input.vRoughness.xy = AdjustRoughnessByGeometricNormal( Input.vRoughness.xy, Input.vGeometricNormalWs.xyz );
-		}
-		
-		LightShade Direct( const LightData light )
-		{
-			LightShade o;
-			o.Diffuse = 0;
-			o.Specular = 0;
-			return o;
-		}
-		
-		LightShade Indirect()
-		{
-			ComputeDirectLighting( lightingTerms, Input );
-			CalculateIndirectLighting( lightingTerms, Input );
-
-			float3 vDiffuseAO = CalculateDiffuseAmbientOcclusion( Input, lightingTerms );
-			lightingTerms.vIndirectDiffuse.rgb *= vDiffuseAO.rgb;
-			lightingTerms.vDiffuse.rgb *= lerp( float3( 1.0, 1.0, 1.0 ), vDiffuseAO.rgb, Input.flAmbientOcclusionDirectDiffuse );
-			
-			float3 vSpecularAO = CalculateSpecularAmbientOcclusion( Input, lightingTerms );
-			lightingTerms.vIndirectSpecular.rgb *= vSpecularAO.rgb;
-			lightingTerms.vSpecular.rgb *= lerp( float3( 1.0, 1.0, 1.0 ), vSpecularAO.rgb, Input.flAmbientOcclusionDirectSpecular );
-
-
-			LightShade o;
-			o.Diffuse = ( ( lightingTerms.vDiffuse.rgb + lightingTerms.vIndirectDiffuse.rgb ) * Input.vDiffuseColor.rgb ) + Input.vEmissive.rgb;
-			o.Specular = lightingTerms.vSpecular.rgb + lightingTerms.vIndirectSpecular.rgb;
-			outSpecualar = o.Specular.rgb;
-			return o;
-		}
-
-		float4 PostProcess( float4 vColor )
-		{
-			PixelOutput o;
-			o.vColor = float4( vColor.rgb, Input.flOpacity );
-			o = PS_FinalCombinerDoPostProcessing( Input, lightingTerms, o );
-			return o.vColor;
-		}
-	};
 
 	//-------------------------------------------------------------------------------------------------------------------------------------------------------------
 
@@ -1084,15 +976,13 @@ PS
 		//float3 specColor_1 = lerp(float3(0,0,0), diffuse, metalness);
 		//float3 newDiffuse_1 = lerp(diffuse, float3(0,0,0), metalness);
 
-		Material material;
-        material.Albedo = saturate(diffuseColor+specColor);
-        material.Normal = TransformNormal( i, DecodeNormal( tnormal.xyz ) );
-        material.Roughness = saturate(roughness);
-        material.Metalness = saturate(metalness+iridescenceMask);
-        material.AmbientOcclusion = saturate(flAmbientOcclusion);
-        material.TintMask = 1;
-        material.Opacity = transparency;
-        material.Emission = emission;
+		Material material = Material::From(i, 
+						float4(saturate(diffuseColor+specColor), transparency), 
+						float4(tnormal.xyz, 1), 
+						float4(saturate(roughness), saturate(metalness+iridescenceMask), saturate(flAmbientOcclusion), 1), 
+						float3( 1.0f, 1.0f, 1.0f ), 
+						emission);
+
         material.Transmission = transmission;
 		
 		//////DEBUG OUTPUTS
@@ -1118,10 +1008,6 @@ PS
 		// 	material.Emission = material.Emission;
 		// #endif
 
-		//ShadingModelValveStandard sm;
-		ShadingModelD2Gear sm;
-		sm.Init(i, material);
-
-		return FinalizePixelMaterial( i, material, sm );
+		return ShadingModelStandard::Shade(i, material);
 	}
 }
