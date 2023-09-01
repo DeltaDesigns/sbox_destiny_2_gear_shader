@@ -4,7 +4,7 @@
 HEADER
 {
 	Description = "Destiny 2 Player Gear Shader";
-	Version = 1;
+	Version = 2;
 }
 
 //=========================================================================================================================
@@ -12,29 +12,9 @@ HEADER
 FEATURES
 {
 	#include "common/features.hlsl"
-	Feature( F_HIGH_QUALITY_REFLECTIONS, 0..1, "Rendering" );
-	Feature( F_ALPHA_TEST, 0..1, "Blending" );
-
-	Feature(F_VERTEX_ANIMATION, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_BLENDSHAPE, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_NORMALSPACE, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_OBJECTSPACE, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_OBJECTSPACEX, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_OBJECTSPACEY, 0..1, "Animation");
-	// Feature(F_VERTEXANIM_OBJECTSPACEZ, 0..1, "Animation");
-
+	//Feature(F_VERTEX_ANIMATION, 0..1, "Animation");
 	Feature(F_DECAL, 0..1, "Blending");
 	Feature(F_DYE_MAP, 0..1, "Dye Map");
-
-	// Feature(F_DIFFUSE_MAP, 0..1, "Debugs");
-	// Feature(F_NORMAL_MAP, 0..1, "Debugs");
-	// Feature(F_METAL_MAP, 0..1, "Debugs");
-	// Feature(F_ROUGH_MAP, 0..1, "Debugs");
-	// Feature(F_IRIDESCENCE_MAP, 0..1, "Debugs");
-	// Feature(F_IRIDESCENCE_MASK_MAP, 0..1, "Debugs");
-	// Feature(F_EMISSION_MAP, 0..1, "Debugs");
-
-	// FeatureRule(Allow1(F_DIFFUSE_MAP, F_METAL_MAP, F_NORMAL_MAP, F_IRIDESCENCE_MAP, F_IRIDESCENCE_MASK_MAP, F_EMISSION_MAP), "");
 }
 
 //=========================================================================================================================
@@ -42,17 +22,19 @@ FEATURES
 //=========================================================================================================================
 MODES
 {
-    VrForward();													    // Indicates this shader will be used for main rendering
-    Depth( S_MODE_DEPTH );
-    ToolsVis( S_MODE_TOOLS_VIS ); 									    // Ability to see in the editor
-    ToolsWireframe( "vr_tools_wireframe.shader" ); 					    // Allows for mat_wireframe to work
-	ToolsShadingComplexity( "vr_tools_shading_complexity.shader" ); 	// Shows how expensive drawing is in debug view
-	Reflection( "high_quality_reflections.shader" );
+	VrForward();
+
+	Depth(); 
+
+	ToolsVis( S_MODE_TOOLS_VIS );
+	ToolsWireframe( "vr_tools_wireframe.shader" );
+	ToolsShadingComplexity( "tools_shading_complexity.shader" );
+
+	//Reflection( S_MODE_REFLECTIONS );
 }
 
 COMMON
 {
-	#define USES_HIGH_QUALITY_REFLECTIONS
 	#define CUSTOM_MATERIAL_INPUTS
 	#include "common/shared.hlsl"
 }
@@ -83,16 +65,14 @@ VS
 {
 	#include "common/vertex.hlsl"
 
-	StaticCombo( S_VERTEX_ANIMATION, F_VERTEX_ANIMATION, Sys( PC ) );
-	BoolAttribute( UsesHighQualityReflections, ( F_HIGH_QUALITY_REFLECTIONS > 0 ) );
-	
-	#if(S_VERTEX_ANIMATION)
-		float fl_VertexAnim_Speed < Default( 1.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
-		FloatAttribute( fl_VertexAnim_Speed, fl_VertexAnim_Speed );
+	// StaticCombo( S_VERTEX_ANIMATION, F_VERTEX_ANIMATION, Sys( PC ) )
+	// #if(S_VERTEX_ANIMATION)
+	// 	float fl_VertexAnim_Speed < Default( 1.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
+	// 	FloatAttribute( fl_VertexAnim_Speed, fl_VertexAnim_Speed );
 
-		float fl_VertexAnim_Scale < Default( 0.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
-		FloatAttribute( fl_VertexAnim_Scale, fl_VertexAnim_Scale );
-	#endif
+	// 	float fl_VertexAnim_Scale < Default( 0.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
+	// 	FloatAttribute( fl_VertexAnim_Scale, fl_VertexAnim_Scale );
+	// #endif
 		
 
 	//
@@ -101,58 +81,6 @@ VS
 	PixelInput MainVs( INSTANCED_SHADER_PARAMS( VS_INPUT i ) )
 	{
 		PixelInput o = ProcessVertex( i );
-		const float PI = 3.14159265;
-
-
-		#if(S_VERTEX_ANIMATION)
-
-			uint nView = uint( 0 );
-			uint nSubview = uint( 0 );
-			#if ( D_MULTIVIEW_INSTANCING )
-				GetViewAndSubview( i.nInstanceID, nView, nSubview );
-				o.nView = nView;
-			#endif
-
-			float3x4 matObjectToWorld = CalculateInstancingObjectToWorldMatrix( INSTANCING_PARAMS( i ) );
-			
-			float4 vVertexAnim = i.vVertexAnim;
-			//move the vertex around on the x axis
-			float str = ((cos((vVertexAnim.g + vVertexAnim.b)*PI + g_flTime * fl_VertexAnim_Speed)) * fl_VertexAnim_Scale) * vVertexAnim.r;
-			o.vPositionPs.x += str;
-
-			// float3 vVertexPosWs = mul( matObjectToWorld, float4(i.vPositionOs, 1.0 ) );
-
-			// o.vPositionPs.x = Vector3WsToVs(vVertexPosWs).x;
-
-
-
-			// uint nView = uint( 0 );
-			// uint nSubview = uint( 0 );
-			// #if ( D_MULTIVIEW_INSTANCING )
-			// 	GetViewAndSubview( i.nInstanceID, nView, nSubview );
-			// 	o.nView = nView;
-			// #endif
-
-			// #if S_VERTEXANIM_BLENDSHAPE
-			// 	o.vPositionPs = Position3WsToPsMultiview (nView, i.vPositionOs + ((i.vVertexAnim.gbr-0.5) * int3(-1,1,1) * cos(g_flTime) * fl_VertexAnim_Scale));
-			// #elif S_VERTEXANIM_OBJECTSPACE
-			// 	float str = ((cos((i.vVertexAnim.g + i.vVertexAnim.b)*PI + g_flTime * fl_VertexAnim_Speed)) * fl_VertexAnim_Scale) * i.vVertexAnim.r;
-			// 	#if S_VERTEXANIM_OBJECTSPACEX
-			// 		i.vPositionOs.x += str;
-			// 	#endif
-			// 	#if S_VERTEXANIM_OBJECTSPACEY
-			// 		i.vPositionOs.y += str;
-			// 	#endif
-			// 	#if S_VERTEXANIM_OBJECTSPACEZ
-			// 		i.vPositionOs.z += str;
-			// 	#endif
-			// 	o.vPositionPs = Position3WsToPsMultiview (nView, i.vPositionOs);
-			// #elif S_VERTEXANIM_NORMALSPACE
-			// 	o.vPositionPs = Position3WsToPsMultiview (nView, i.vPositionOs + (((cos((i.vVertexAnim.g + i.vVertexAnim.b)*PI + g_flTime * fl_VertexAnim_Speed)) * fl_VertexAnim_Scale + _VertexAnim_Scale) * i.vVertexAnim.r) * normalize(v.normal));
-			// #else
-			// 	o.vPositionPs = Position3WsToPsMultiview (nView, i.vPositionOs);
-			// #endif
-		#endif
 
 		o.vColor = i.vColor;
 		o.vSlots = i.vSlots;
@@ -167,26 +95,13 @@ VS
 PS
 {
 	#include "common/pixel.hlsl"
-	#include "blendmodes.hlsl"
 
 	#define CUSTOM_TEXTURE_FILTERING
     SamplerState TextureFiltering2 < Filter( NEAREST ); AddressU( BORDER ); AddressV( BORDER ); MaxAniso( 4 ); >;
 
 	//---------------------------------------------------------------------------------------------
-	StaticCombo( S_MODE_DEPTH, 0..1, Sys( ALL ) );
-    StaticCombo( S_ALPHA_TEST, F_ALPHA_TEST, Sys( ALL ) );
-
 	StaticCombo( S_DECAL, F_DECAL, Sys( PC ) );
 	StaticCombo( S_DYE_MAP, F_DYE_MAP, Sys( PC ) );
-
-	//Debug/buffer view modes
-	// StaticCombo( S_DIFFUSE_MAP, F_DIFFUSE_MAP, Sys( PC ) );
-	// StaticCombo( S_NORMAL_MAP, F_NORMAL_MAP, Sys( PC ) );
-	// StaticCombo( S_METAL_MAP, F_METAL_MAP, Sys( PC ) );
-	// StaticCombo( S_ROUGH_MAP, F_ROUGH_MAP, Sys( PC ) );
-	// StaticCombo( S_IRIDESCENCE_MAP, F_IRIDESCENCE_MAP, Sys( PC ) );
-	// StaticCombo( S_IRIDESCENCE_MASK_MAP, F_IRIDESCENCE_MASK_MAP, Sys( PC ) );
-	// StaticCombo( S_EMISSION_MAP, F_EMISSION_MAP, Sys( PC ) );
 
 	//---------------------------------------------------------------------------------------------
 	//Main texture inputs
@@ -242,7 +157,6 @@ PS
 
 	//End of Detail Textures
 	//--------------------------------------------------------------------------------------------------------------------
-
 
 	//SHADER INPUTS
 	//---------------------------------------------------------------------------------------------------------------------
@@ -332,8 +246,6 @@ PS
 
 	//End of Armor Primary
 	//--------------------------------------------------------------------------------------------------------------------
-	
-
 
 
 	//Armor Secondary
@@ -652,6 +564,23 @@ PS
 	//--------------------------------------------------------------------------------------------------------------------
 
 	//Helper functions
+	float Overlay_blend( float a, float b )
+	{
+		if ( a <= 0.5f )
+			return 2.0f * a * b;
+		else
+			return 1.0f - 2.0f * ( 1.0f - a ) * ( 1.0f - b );
+	}
+
+	float3 Overlay_blend( float3 a, float3 b )
+	{
+		return float3(
+			Overlay_blend( a.r, b.r ),
+			Overlay_blend( a.g, b.g ),
+			Overlay_blend( a.b, b.b )
+		);
+	}
+
 	float3 Bungie_Overlay (float3 cBase, float3 cBlend, float fac)
 	{
 		float3 cNew = cBlend * saturate(cBase * 4.0f) + saturate(cBase - 0.25f);
@@ -685,10 +614,7 @@ PS
 
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
-		//Material m = GatherMaterial( i );
-
 		float2 vUVs = i.vTextureCoords.xy;
-		//float2 slots = float2(0,0);
 
 		float4 diffuseTex = Tex2DS(g_tDiffuse, TextureFiltering, vUVs );
 		float4 gstackTex = Tex2DS( g_tGStack, TextureFiltering, vUVs );
@@ -921,7 +847,7 @@ PS
 		emission *= flEmit;
 		
 		// Normal maps
-		float3 tnormal = saturate((lerp(normalTex, Overlay_blend(normalTex, detailNorm), inDyemask * dyeNormalBlend)));
+		float3 tnormal = saturate((lerp(normalTex.xyz, Overlay_blend(normalTex.xyz, detailNorm.xyz), inDyemask * dyeNormalBlend)));
 		float cavity = saturate(lerp(normalTex.z, normalTex.z * detailNorm.z, inDyemask * dyeNormalBlend));
 		NormalReconstructZ_float(tnormal.xy, tnormal);
 
@@ -972,10 +898,6 @@ PS
 		float3 specColor = (lerp(float3(0,0,0), diffuse, metalness)) + (lerp(lerp(float3(0,0,0), iridescenceColor.rgb, iridescenceMask), float3(0,0,0), metalness));
 		float3 diffuseColor = lerp(diffuse, float3(0,0,0), metalness);
 		
-		//float specStrength = 0.25 * (1 - iridescenceMask);
-		//float3 specColor_1 = lerp(float3(0,0,0), diffuse, metalness);
-		//float3 newDiffuse_1 = lerp(diffuse, float3(0,0,0), metalness);
-
 		Material material = Material::From(i, 
 						float4(saturate(diffuseColor+specColor), transparency), 
 						float4(tnormal.xyz, 1), 
@@ -984,29 +906,6 @@ PS
 						emission);
 
         material.Transmission = transmission;
-		
-		//////DEBUG OUTPUTS
-		// #if (S_DIFFUSE_MAP)
-		// 	material.Albedo = saturate(newDiffuse+specColor);
-		// 	material.Emission = saturate(newDiffuse+specColor);
-		// #elif (S_NORMAL_MAP)
-		// 	material.Albedo = SrgbGammaToLinear(tnormal);
-		// 	material.Emission = SrgbGammaToLinear(tnormal);
-		// #elif (S_METAL_MAP)
-		// 	material.Albedo = metalness;
-		// 	material.Emission = metalness;
-		// #elif (S_ROUGH_MAP)
-		//  	material.Albedo = roughness;
-		// #elif (S_IRIDESCENCE_MAP)
-		// 	material.Albedo = specColor;
-		// 	material.Emission = specColor;
-		// #elif (S_IRIDESCENCE_MASK_MAP)
-		// 	material.Albedo = iridescenceMask;
-		// 	material.Emission = iridescenceMask;
-		// #elif (S_EMISSION_MAP)
-		// 	material.Albedo = material.Emission;
-		// 	material.Emission = material.Emission;
-		// #endif
 
 		return ShadingModelStandard::Shade(i, material);
 	}

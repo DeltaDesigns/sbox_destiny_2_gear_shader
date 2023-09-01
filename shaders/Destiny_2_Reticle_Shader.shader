@@ -20,22 +20,19 @@ FEATURES
 //=========================================================================================================================
 MODES
 {
-	VrForward();
-
-	Depth( "depth_only.shader" ); 
-
-	ToolsVis( S_MODE_TOOLS_VIS );
-	ToolsWireframe( "vr_tools_wireframe.shader" );
-	ToolsShadingComplexity( "tools_shading_complexity.shader" );
-
+    VrForward();													    // Indicates this shader will be used for main rendering
+    Depth( "depth_only.shader" );
+    ToolsVis( S_MODE_TOOLS_VIS ); 									    // Ability to see in the editor
+    ToolsWireframe( "vr_tools_wireframe.shader" ); 					    // Allows for mat_wireframe to work
+	ToolsShadingComplexity( "vr_tools_shading_complexity.shader" ); 	// Shows how expensive drawing is in debug view
 	Reflection( "high_quality_reflections.shader" );
 }
 
 //=========================================================================================================================
 COMMON
 {
+	#define CUSTOM_MATERIAL_INPUTS
 	#include "common/shared.hlsl"
-
 	#define S_TRANSLUCENT 1
 }
 
@@ -74,14 +71,7 @@ VS
 PS
 {
 	//Includes
-	#include "sbox_pixel.fxc"
-
-	#include "common/pixel.config.hlsl"
-	#include "common/pixel.material.structs.hlsl"
-	#include "common/pixel.lighting.hlsl"
-	#include "common/pixel.shading.hlsl"
-
-	#include "common/pixel.material.helpers.hlsl"
+	#include "common/pixel.hlsl"
 	
 	//
 	// Main
@@ -133,17 +123,13 @@ PS
 		float4 colorFinal = float4( color1 + color2 + color3, 1 );
 
 		//Main material properties
-		Material material;
-        material.Albedo = float4(0,0,0,1);
-        material.Normal = TransformNormal( i, DecodeNormal( Tex2DS( g_tNormal, TextureFiltering, vUV ).xyz ) );
-        material.Roughness = 1;
-        material.Metalness = 0;
-        material.AmbientOcclusion = 1;
-        material.TintMask = 1;
-        material.Opacity = gstack.g;
-        material.Emission = colorFinal * g_flEmitScale;
-        material.Transmission = 0;
-		
+		Material material = Material::From(i, 
+						float4(0,0,0,gstack.g), 
+						float4(Tex2DS( g_tNormal, TextureFiltering, vUV ).xyz, 1), 
+						float4(1, 0, 1, 1), 
+						float3( 1.0f, 1.0f, 1.0f ), 
+						colorFinal * g_flEmitScale);
+
 		if(g_flSpecularScale > 0)
 		{
 			material.Opacity = saturate(material.Opacity + g_flSpecularScale);
@@ -152,9 +138,7 @@ PS
 			material.Roughness = 0.25;
 		}
 
-		ShadingModelValveStandard sm;
-		
-		return FinalizePixelMaterial( i, material, sm );
+		return ShadingModelStandard::Shade(i, material);
 	}
 
 }
