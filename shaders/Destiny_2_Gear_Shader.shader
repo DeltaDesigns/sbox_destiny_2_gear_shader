@@ -35,6 +35,13 @@ MODES
 
 COMMON
 {
+	#ifndef S_ALPHA_TEST
+		#define S_ALPHA_TEST 1
+	#endif
+	#ifndef S_TRANSLUCENT
+		#define S_TRANSLUCENT 0
+	#endif
+
 	#define CUSTOM_MATERIAL_INPUTS
 	#include "common/shared.hlsl"
 }
@@ -103,6 +110,9 @@ PS
 	StaticCombo( S_DECAL, F_DECAL, Sys( PC ) );
 	StaticCombo( S_DYE_MAP, F_DYE_MAP, Sys( PC ) );
 
+	DynamicCombo( D_ALPHA_TEST, 0..1, !S_DECAL );
+	DynamicCombo( D_TRANSLUCENT, 0..1, S_DECAL );
+
 	//---------------------------------------------------------------------------------------------
 	//Main texture inputs
 
@@ -160,8 +170,6 @@ PS
 
 	//SHADER INPUTS
 	//---------------------------------------------------------------------------------------------------------------------
-	float g_flMaskClipValue < Default( 0.5f ); Range(0, 1.0f); UiGroup( "Material,10/41" ); >;
-	FloatAttribute( g_flMaskClipValue, g_flMaskClipValue );
 
 	//Tranforms for all slots
 	float4 g_Armor_DetailDiffuseTransform < UiType( VectorText ); Default4(4, 4, 0, 0); UiGroup( "Armor,12/Transforms,12/1" ); >;
@@ -625,11 +633,9 @@ PS
 		if (i.vSlots.y < 0.5)
 		{
 			transparency = saturate(mad(gstackTex.b, 1000, -50));
-			//clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
 		}  
 		#if(S_DECAL)
 			transparency = saturate(mad(diffuseTex.a, 1000, -50));;
-			//clip(transparency - lerp(g_flMaskClipValue, 1, g_flMaskClipValue));
 			gstackTex = float4(0.5,0.5,0,0);
 		#endif
 
