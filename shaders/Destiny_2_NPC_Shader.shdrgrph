@@ -5,6 +5,12 @@
   "nodes": [
     {
       "_class": "Result",
+      "DefaultOpacity": 1,
+      "DefaultRoughness": 1,
+      "DefaultMetalness": 0,
+      "DefaultAmbientOcclusion": 1,
+      "Identifier": "0",
+      "Position": "-816,64",
       "Albedo": {
         "Identifier": "1",
         "Output": "Result"
@@ -32,21 +38,10 @@
       "AmbientOcclusion": {
         "Identifier": "5",
         "Output": "Z"
-      },
-      "DefaultOpacity": 1,
-      "DefaultRoughness": 1,
-      "DefaultMetalness": 0,
-      "DefaultAmbientOcclusion": 1,
-      "PositionOffset": {},
-      "Identifier": "0",
-      "Position": "-816,64"
+      }
     },
     {
       "_class": "TextureSampler",
-      "Coords": {
-        "Identifier": "4",
-        "Output": "Result"
-      },
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -63,14 +58,14 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "1",
-      "Position": "-2352,-192"
-    },
-    {
-      "_class": "TextureSampler",
+      "Position": "-2352,-192",
       "Coords": {
         "Identifier": "4",
         "Output": "Result"
-      },
+      }
+    },
+    {
+      "_class": "TextureSampler",
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -88,14 +83,14 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "2",
-      "Position": "-2352,32"
-    },
-    {
-      "_class": "TextureSampler",
+      "Position": "-2352,32",
       "Coords": {
         "Identifier": "4",
         "Output": "Result"
-      },
+      }
+    },
+    {
+      "_class": "TextureSampler",
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -114,7 +109,11 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "3",
-      "Position": "-2352,240"
+      "Position": "-2352,240",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      }
     },
     {
       "_class": "TextureCoord",
@@ -125,15 +124,19 @@
     },
     {
       "_class": "SplitVector",
+      "Identifier": "5",
+      "Position": "-2144,32",
       "Input": {
         "Identifier": "2",
         "Output": "Result"
-      },
-      "Identifier": "5",
-      "Position": "-2144,32"
+      }
     },
     {
       "_class": "Multiply",
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "6",
+      "Position": "-1808,-256",
       "A": {
         "Identifier": "1",
         "Output": "Result"
@@ -141,30 +144,21 @@
       "B": {
         "Identifier": "5",
         "Output": "Z"
-      },
-      "DefaultA": 0,
-      "DefaultB": 1,
-      "Identifier": "6",
-      "Position": "-1808,-256"
+      }
     },
     {
       "_class": "Subtract",
-      "A": {},
-      "B": {
-        "Identifier": "5",
-        "Output": "Y"
-      },
       "DefaultA": 1,
       "DefaultB": 1,
       "Identifier": "7",
-      "Position": "-1856,48"
+      "Position": "-1856,48",
+      "B": {
+        "Identifier": "5",
+        "Output": "Y"
+      }
     },
     {
       "_class": "TextureSampler",
-      "Coords": {
-        "Identifier": "4",
-        "Output": "Result"
-      },
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -182,19 +176,27 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "8",
-      "Position": "-2352,640"
+      "Position": "-2352,640",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      }
     },
     {
       "_class": "SplitVector",
+      "Identifier": "9",
+      "Position": "-2144,640",
       "Input": {
         "Identifier": "8",
         "Output": "Result"
-      },
-      "Identifier": "9",
-      "Position": "-2144,640"
+      }
     },
     {
       "_class": "Multiply",
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "10",
+      "Position": "-1664,656",
       "A": {
         "Identifier": "11",
         "Output": "Result"
@@ -202,11 +204,7 @@
       "B": {
         "Identifier": "12",
         "Output": "Result"
-      },
-      "DefaultA": 0,
-      "DefaultB": 1,
-      "Identifier": "10",
-      "Position": "-1664,656"
+      }
     },
     {
       "_class": "Float4",
@@ -227,6 +225,10 @@
     },
     {
       "_class": "Multiply",
+      "DefaultA": 0,
+      "DefaultB": 1,
+      "Identifier": "12",
+      "Position": "-1856,656",
       "A": {
         "Identifier": "13",
         "Output": "Result"
@@ -234,11 +236,7 @@
       "B": {
         "Identifier": "9",
         "Output": "X"
-      },
-      "DefaultA": 0,
-      "DefaultB": 1,
-      "Identifier": "12",
-      "Position": "-1856,656"
+      }
     },
     {
       "_class": "Float",
@@ -260,22 +258,17 @@
     },
     {
       "_class": "Multiply",
-      "A": {
-        "Identifier": "10",
-        "Output": "Result"
-      },
-      "B": {},
       "DefaultA": 1,
       "DefaultB": 10,
       "Identifier": "14",
-      "Position": "-1456,640"
+      "Position": "-1456,640",
+      "A": {
+        "Identifier": "10",
+        "Output": "Result"
+      }
     },
     {
       "_class": "TextureSampler",
-      "Coords": {
-        "Identifier": "16",
-        "Output": "Result"
-      },
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -294,10 +287,19 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "15",
-      "Position": "-2352,432"
+      "Position": "-2352,432",
+      "Coords": {
+        "Identifier": "16",
+        "Output": "Result"
+      }
     },
     {
       "_class": "TileAndOffset",
+      "DefaultTile": "1,1",
+      "DefaultOffset": "0,0",
+      "WrapTo01": false,
+      "Identifier": "16",
+      "Position": "-2784,480",
       "Coords": {
         "Identifier": "4",
         "Output": "Result"
@@ -305,13 +307,7 @@
       "Tile": {
         "Identifier": "17",
         "Output": "Result"
-      },
-      "Offset": {},
-      "DefaultTile": "1,1",
-      "DefaultOffset": "0,0",
-      "WrapTo01": false,
-      "Identifier": "16",
-      "Position": "-2784,480"
+      }
     },
     {
       "_class": "Float",
@@ -333,6 +329,11 @@
     },
     {
       "_class": "Blend",
+      "Fraction": 1,
+      "BlendMode": "Overlay",
+      "Clamp": true,
+      "Identifier": "18",
+      "Position": "-1904,336",
       "A": {
         "Identifier": "3",
         "Output": "Result"
@@ -344,12 +345,7 @@
       "C": {
         "Identifier": "19",
         "Output": "Result"
-      },
-      "Fraction": 1,
-      "BlendMode": "Overlay",
-      "Clamp": true,
-      "Identifier": "18",
-      "Position": "-1904,336"
+      }
     },
     {
       "_class": "Float",
@@ -371,15 +367,21 @@
     },
     {
       "_class": "SplitVector",
+      "Identifier": "20",
+      "Position": "-1712,336",
       "Input": {
         "Identifier": "18",
         "Output": "Result"
-      },
-      "Identifier": "20",
-      "Position": "-1712,336"
+      }
     },
     {
       "_class": "CombineVector",
+      "DefaultX": 0,
+      "DefaultY": 0,
+      "DefaultZ": 0,
+      "DefaultW": 0,
+      "Identifier": "21",
+      "Position": "-1408,336",
       "X": {
         "Identifier": "20",
         "Output": "X"
@@ -395,43 +397,33 @@
       "W": {
         "Identifier": "20",
         "Output": "W"
-      },
-      "DefaultX": 0,
-      "DefaultY": 0,
-      "DefaultZ": 0,
-      "DefaultW": 0,
-      "Identifier": "21",
-      "Position": "-1408,336"
+      }
     },
     {
       "_class": "Subtract",
-      "A": {},
-      "B": {
-        "Identifier": "20",
-        "Output": "Y"
-      },
       "DefaultA": 1,
       "DefaultB": 1,
       "Identifier": "22",
-      "Position": "-1520,384"
+      "Position": "-1520,384",
+      "B": {
+        "Identifier": "20",
+        "Output": "Y"
+      }
     },
     {
       "_class": "TransformNormal",
+      "InputSpace": "Tangent",
+      "OutputSpace": "Tangent",
+      "DecodeNormal": true,
+      "Identifier": "23",
+      "Position": "-1088,448",
       "Input": {
         "Identifier": "21",
         "Output": "Vector"
-      },
-      "InputSpace": "Tangent",
-      "DecodeNormal": true,
-      "Identifier": "23",
-      "Position": "-1088,448"
+      }
     },
     {
       "_class": "TextureSampler",
-      "Coords": {
-        "Identifier": "4",
-        "Output": "Result"
-      },
       "Image": "materials/dev/white_color.tga",
       "Sampler": {},
       "UI": {
@@ -449,29 +441,23 @@
         "CreateInput": "CreateInputTexture2D"
       },
       "Identifier": "24",
-      "Position": "-2352,-416"
+      "Position": "-2352,-416",
+      "Coords": {
+        "Identifier": "4",
+        "Output": "Result"
+      }
     },
     {
       "_class": "SplitVector",
+      "Identifier": "25",
+      "Position": "-2160,-416",
       "Input": {
         "Identifier": "24",
         "Output": "Result"
-      },
-      "Identifier": "25",
-      "Position": "-2160,-416"
+      }
     },
     {
       "_class": "Branch",
-      "True": {
-        "Identifier": "1",
-        "Output": "A"
-      },
-      "False": {
-        "Identifier": "25",
-        "Output": "X"
-      },
-      "A": {},
-      "B": {},
       "Name": "Use Diffuse Alpha",
       "Operator": "Equal",
       "Enabled": false,
@@ -484,7 +470,15 @@
         }
       },
       "Identifier": "26",
-      "Position": "-1808,-432"
+      "Position": "-1808,-432",
+      "True": {
+        "Identifier": "1",
+        "Output": "A"
+      },
+      "False": {
+        "Identifier": "25",
+        "Output": "X"
+      }
     }
   ]
 }

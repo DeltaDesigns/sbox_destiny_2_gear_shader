@@ -24,7 +24,7 @@ MODES
 {
 	VrForward();
 
-	Depth(); 
+	Depth();
 
 	ToolsVis( S_MODE_TOOLS_VIS );
 	ToolsWireframe( "vr_tools_wireframe.shader" );
@@ -35,12 +35,12 @@ MODES
 
 COMMON
 {
-	#ifndef S_ALPHA_TEST
-		#define S_ALPHA_TEST 1
-	#endif
-	#ifndef S_TRANSLUCENT
-		#define S_TRANSLUCENT 0
-	#endif
+	// #ifndef S_ALPHA_TEST
+	// 	#define S_ALPHA_TEST 1
+	// #endif
+	// #ifndef S_TRANSLUCENT
+	// 	#define S_TRANSLUCENT 0
+	// #endif
 
 	#define CUSTOM_MATERIAL_INPUTS
 	#include "common/shared.hlsl"
@@ -53,8 +53,8 @@ struct VertexInput
 	#include "common/vertexinput.hlsl"
 	
 	float2 vSlots : TEXCOORD2 < Semantic( Texcoord2 ); >;
-	float4 vVertexAnim	: COLOR0 < Semantic( Color ); >;
-	float4 vColor	: COLOR1 < Semantic( Color1 ); >;	
+	//float4 vVertexAnim	: COLOR0 < Semantic( Color ); >;
+	//float4 vColor	: COLOR1 < Semantic( Color1 ); >;	
 };
 
 //=========================================================================================================================
@@ -62,7 +62,7 @@ struct VertexInput
 struct PixelInput
 {
 	#include "common/pixelinput.hlsl"
-	float4 vColor	: COLOR0;
+	//float4 vColor	: COLOR0;
 	float2 vSlots : TEXCOORD14;
 };
 
@@ -71,25 +71,15 @@ struct PixelInput
 VS
 {
 	#include "common/vertex.hlsl"
-
-	// StaticCombo( S_VERTEX_ANIMATION, F_VERTEX_ANIMATION, Sys( PC ) )
-	// #if(S_VERTEX_ANIMATION)
-	// 	float fl_VertexAnim_Speed < Default( 1.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
-	// 	FloatAttribute( fl_VertexAnim_Speed, fl_VertexAnim_Speed );
-
-	// 	float fl_VertexAnim_Scale < Default( 0.0f ); Range(0, 10.0f); UiGroup( "Vertex Animation,0" ); >;
-	// 	FloatAttribute( fl_VertexAnim_Scale, fl_VertexAnim_Scale );
-	// #endif
 		
-
 	//
 	// Main
 	//
-	PixelInput MainVs( INSTANCED_SHADER_PARAMS( VS_INPUT i ) )
+	PixelInput MainVs( VertexInput i )
 	{
 		PixelInput o = ProcessVertex( i );
 
-		o.vColor = i.vColor;
+		//o.vColor = i.vColor;
 		o.vSlots = i.vSlots;
 		
 		// Add your vertex manipulation functions here
@@ -110,8 +100,17 @@ PS
 	StaticCombo( S_DECAL, F_DECAL, Sys( PC ) );
 	StaticCombo( S_DYE_MAP, F_DYE_MAP, Sys( PC ) );
 
-	DynamicCombo( D_ALPHA_TEST, 0..1, !S_DECAL );
-	DynamicCombo( D_TRANSLUCENT, 0..1, S_DECAL );
+	// Additive Blending
+	#if (S_DECAL)
+        #define BLEND_MODE_ALREADY_SET
+        RenderState(BlendEnable, true);
+        RenderState(SrcBlend, SRC_COLOR);
+        RenderState(DstBlend, INV_SRC_COLOR);
+    #endif
+
+	BoolAttribute(bWantsFBCopyTexture, S_DECAL);
+    BoolAttribute(translucent, S_DECAL);
+    CreateTexture2D( g_tFrameBufferCopyTexture ) < Attribute( "FrameBufferCopyTexture" ); SrgbRead( true ); Filter( MIN_MAG_MIP_LINEAR ); AddressU( CLAMP ); AddressV( CLAMP ); >;
 
 	//---------------------------------------------------------------------------------------------
 	//Main texture inputs
@@ -633,9 +632,11 @@ PS
 		if (i.vSlots.y < 0.5)
 		{
 			transparency = saturate(mad(gstackTex.b, 1000, -50));
+			clip( transparency - .001 );
 		}  
 		#if(S_DECAL)
-			transparency = saturate(mad(diffuseTex.a, 1000, -50));;
+			transparency = saturate(mad(diffuseTex.a, 1000, -50));
+			clip( transparency - .001 );
 			gstackTex = float4(0.5,0.5,0,0);
 		#endif
 
@@ -677,9 +678,9 @@ PS
 		float diffBlend = float(0.0f);
 		float normBlend = float(0.0f);
 		float roughBlend = float(0.0f);
-		float metal = float(0.0f);;
+		float metal = float(0.0f);
 		int iridescenceID = 0;
-		float fuzz = float(0.0f);;
+		float fuzz = float(0.0f);
 		float transmission = float(0.0f);
 		float4 emission = float(0.0f);
 		float4 wornColor = float4(1.0f, 1.0f, 1.0f, 1.0f);
@@ -880,17 +881,11 @@ PS
 		// Get the world space position of our point
         float3 vPositionWs = i.vPositionWithOffsetWs.xyz + g_vHighPrecisionLightingOffsetWs.xyz;
         
-        // Multiview instancing
-        uint nViewId = 0;
-        #if( D_MULTIVIEW_INSTANCING )
-            nViewId = i.nView;
-        #endif
-        
         // Get our camera direction
-        float3 vPositionToCameraDirWs = CalculatePositionToCameraDirWsMultiview( nViewId, vPositionWs );
+        float3 vPositionToCameraDirWs = CalculatePositionToCameraDirWs( vPositionWs );
         
         // View Dot Normal
-        float flVDotN =  dot( vPositionToCameraDirWs.xyz, TransformNormal( i, DecodeNormal( tnormal.xyz ) ));	
+        float flVDotN =  dot( vPositionToCameraDirWs.xyz, TransformNormal( DecodeNormal( tnormal.xyz ), i.vNormalWs, i.vTangentUWs, i.vTangentVWs ));	
 		///
 
 		float4 iridescenceColor = Tex2DS(g_tIridescence, TextureFiltering2, float2(flVDotN, (0.5f + iridescenceID)/128.0f) ).rgba;
@@ -912,6 +907,11 @@ PS
 						emission);
 
         material.Transmission = transmission;
+
+		#if S_DECAL
+			//material.Albedo = Overlay_blend(material.Albedo, g_tFrameBufferCopyTexture.Sample(TextureFiltering, i.vPositionSs.xy * g_vFrameBufferCopyInvSizeAndUvScale.xy) );
+			material.Albedo += g_tFrameBufferCopyTexture.Sample(TextureFiltering, i.vPositionSs.xy * g_vFrameBufferCopyInvSizeAndUvScale.xy);
+		#endif
 
 		return ShadingModelStandard::Shade(i, material);
 	}

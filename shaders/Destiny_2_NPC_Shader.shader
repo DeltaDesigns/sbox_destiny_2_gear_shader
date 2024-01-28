@@ -14,6 +14,8 @@ MODES
 	VrForward();
 	Depth(); 
 	ToolsVis( S_MODE_TOOLS_VIS );
+	ToolsWireframe( "vr_tools_wireframe.shader" );
+	ToolsShadingComplexity( "tools_shading_complexity.shader" );
 }
 
 COMMON
@@ -113,9 +115,9 @@ PS
 	
 	float4 MainPs( PixelInput i ) : SV_Target0
 	{
-		Material m;
+		Material m = Material::Init();
 		m.Albedo = float3( 1, 1, 1 );
-		m.Normal = TransformNormal( i, float3( 0, 0, 1 ) );
+		m.Normal = float3( 0, 0, 1 );
 		m.Roughness = 1;
 		m.Metalness = 0;
 		m.AmbientOcclusion = 1;
@@ -148,7 +150,7 @@ PS
 		float l_21 = l_17.z;
 		float l_22 = l_17.w;
 		float4 l_23 = float4( l_18, l_20, l_21, l_22 );
-		float3 l_24 = TransformNormal( i, DecodeNormal( l_23.xyz ) );
+		float3 l_24 = DecodeNormal( l_23.xyz );
 		float4 l_25 = Tex2DS( g_tMRC, g_sSampler0, l_0 );
 		float l_26 = l_25.y;
 		float l_27 = 1 - l_26;
@@ -167,6 +169,14 @@ PS
 		m.Roughness = saturate( m.Roughness );
 		m.Metalness = saturate( m.Metalness );
 		m.Opacity = saturate( m.Opacity );
+
+		// Result node takes normal as tangent space, convert it to world space now
+		m.Normal = TransformNormal( m.Normal, i.vNormalWs, i.vTangentUWs, i.vTangentVWs );
+
+		// for some toolvis shit
+		m.WorldTangentU = i.vTangentUWs;
+		m.WorldTangentV = i.vTangentVWs;
+        m.TextureCoords = i.vTextureCoords.xy;
 		
 		return ShadingModelStandard::Shade( i, m );
 	}

@@ -20,12 +20,11 @@ FEATURES
 //=========================================================================================================================
 MODES
 {
-    VrForward();													    // Indicates this shader will be used for main rendering
-    Depth( "depth_only.shader" );
-    ToolsVis( S_MODE_TOOLS_VIS ); 									    // Ability to see in the editor
-    ToolsWireframe( "vr_tools_wireframe.shader" ); 					    // Allows for mat_wireframe to work
-	ToolsShadingComplexity( "vr_tools_shading_complexity.shader" ); 	// Shows how expensive drawing is in debug view
-	Reflection( "high_quality_reflections.shader" );
+	VrForward();
+	Depth(); 
+	ToolsVis( S_MODE_TOOLS_VIS );
+	ToolsWireframe( "vr_tools_wireframe.shader" );
+	ToolsShadingComplexity( "tools_shading_complexity.shader" );
 }
 
 //=========================================================================================================================
@@ -58,7 +57,7 @@ VS
 	//
 	// Main
 	//
-	PixelInput MainVs( INSTANCED_SHADER_PARAMS( VS_INPUT i ) )
+	PixelInput MainVs( VertexInput i )
 	{
 		PixelInput o = ProcessVertex( i );
 		// Add your vertex manipulation functions here
